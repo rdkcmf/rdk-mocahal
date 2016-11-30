@@ -1,0 +1,14 @@
+Overview:
+---------
+
+moca-hal files a generic absratction layer over hadware abstraction layer.
+
+
+Build Instructions:
+-------------------
+* Building the moca-hal module
+  It follows the yocto build system
+  bitbake moca-hal
+
+ Here, librdkmocahal library instaled under "/usr/lib/"
+ And the header files installed under "/usr/include/" on target
