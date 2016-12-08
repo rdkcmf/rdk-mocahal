@@ -17,36 +17,24 @@
  * limitations under the License.
 */
 #include "moca_hal.h"
+#include <stdio.h>
+#include <string.h>
+
+void *mocaContext=NULL;
 
 #define MOCA_API_SUCCESS 1
 #define MOCA_API_ERROR 0
-int moca_checkInit()
-{
-    int retVal=0;
-    if(!mocaContext)
-    {
-        retVal=moca_init();
-        if(retVal == -1)
-        {
-            printf("Issue in initializing MoCA");
-            return retVal;
-        }
-    }
-    
-}
 
 int moca_init(){
-    RDK_LOG( RDK_LOG_TRACE1, LOG_NMGR, "[%s:%d] Enter\n", __FUNCTION__, __LINE__ );
     int retVal=0;
-    return retVal
-    RDK_LOG( RDK_LOG_TRACE1, LOG_NMGR, "[%s:%d] Exit\n", __FUNCTION__, __LINE__ );
+    return retVal;
 }
 
-int moca_getStatus(MoCAOperStatus *status)
+int moca_getStatus(eMoCALinkStatus *status)
 {
     int retVal=0;
     *status=DOWN;
-    return retVal; 
+    return retVal;
 }
 
 int moca_getNetworkControllerNodeId(unsigned int *nodeID)
@@ -54,7 +42,7 @@ int moca_getNetworkControllerNodeId(unsigned int *nodeID)
     int retVal=0;
     *nodeID = 1;
     return retVal;
-}       
+}
 
 int moca_getNetworkControllerMac(unsigned char * mac)
 {
@@ -65,6 +53,7 @@ int moca_getNetworkControllerMac(unsigned char * mac)
             mac[i] = macaddress[i];
     return retVal;
 }
+
 int moca_checkInit()
 {
     int retVal=0;
@@ -78,10 +67,11 @@ int moca_checkInit()
         }
     }
 }
+
 int moca_getNumberOfNodesConnected(unsigned int *totalMoCANode)
 {
     int retVal=MOCA_API_ERROR;
-    MoCAOperStatus *status;
+    eMoCALinkStatus *status;
     if((MOCA_API_SUCCESS == moca_getStatus(status)) && (status == UP))
     {
         *totalMoCANode=2;
@@ -90,16 +80,16 @@ int moca_getNumberOfNodesConnected(unsigned int *totalMoCANode)
     return retVal;
 }
 
-
-int moca_getPhyRxRate(unsigned int * phyRxRate)
+int moca_getPhyRxRate(mocaPhyRateData * phyRxRate)
 {
-    	int retVal=MOCA_API_ERROR;
-	*phyRxRate=100;
-	retVal = MOCA_API_SUCCESS;
+    int retVal=MOCA_API_ERROR;
+    phyRxRate->phyRate[0] = 100;
+    retVal = MOCA_API_SUCCESS;
 }
-int moca_getPhyTxRate(unsigned int * phyTxRate)
+
+int moca_getPhyTxRate(mocaPhyRateData * phyTxRate)
 {
-    	int retVal=MOCA_API_ERROR;
-	*phyTxRate=100;
-	retVal = MOCA_API_SUCCESS;
+    int retVal=MOCA_API_ERROR;
+    phyTxRate->phyRate[0] = 100;
+    retVal = MOCA_API_SUCCESS;
 }
