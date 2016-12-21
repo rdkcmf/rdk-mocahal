@@ -30,6 +30,14 @@ typedef struct _mocaPhyRateData
     unsigned int deviceNodeId;
 } mocaPhyRateData;
 
+typedef struct _mocaPowerLevelData
+{
+    unsigned int neighNodeId[15];
+    int mocaPower[15];
+    unsigned int totalNodesPresent;
+    unsigned int deviceNodeId;
+} mocaPowerLevelData;
+
 int moca_init();
 int moca_UnInit();
 int moca_getStatus(eMoCALinkStatus *status);
@@ -39,4 +47,7 @@ int moca_checkInit();
 int moca_getNumberOfNodesConnected(unsigned int *totalMoCANode);
 int moca_getPhyTxRate(mocaPhyRateData * mocaPhyRate);
 int moca_getPhyRxRate(mocaPhyRateData * mocaPhyRate);
+int moca_getTxPowerReduction(mocaPowerLevelData * mocaPowerLevel);
+int moca_getRxPower(mocaPowerLevelData * mocaPowerLevel);
 int get_phy_rate(void * ctx, unsigned int node, unsigned int profile, unsigned int *phy_rate);
+int get_power_level(void * ctx, unsigned int node, unsigned int profile, int *power_level,int isRx);
