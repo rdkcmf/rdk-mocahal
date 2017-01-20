@@ -37,7 +37,9 @@ typedef enum RMH_Result {
     RMH_INVALID_PARAM,
     RMH_INVALID_NETWORK_STATE,
     RMH_INVALID_INTERNAL_STATE,
-    RMH_TIMEOUT
+    RMH_TIMEOUT,
+    RMH_NOT_SUPPORTED,
+    RMH_UNIMPLEMENTED
 } RMH_Result;
 
 typedef enum RMH_LinkStatus {
