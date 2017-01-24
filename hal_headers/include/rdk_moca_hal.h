@@ -31,16 +31,25 @@ extern "C" {
 
 typedef struct RMH* RMH_Handle;
 
-typedef enum RMH_Result {
-    RMH_SUCCESS = 0,
-    RMH_FAILURE,
-    RMH_INVALID_PARAM,
-    RMH_INVALID_NETWORK_STATE,
-    RMH_INVALID_INTERNAL_STATE,
-    RMH_TIMEOUT,
-    RMH_NOT_SUPPORTED,
-    RMH_UNIMPLEMENTED
-} RMH_Result;
+#define RMH_RESULT_LIST \
+    AS(RMH_SUCCESS)\
+    AS(RMH_FAILURE)\
+    AS(RMH_INVALID_PARAM)\
+    AS(RMH_INVALID_NETWORK_STATE)\
+    AS(RMH_INVALID_INTERNAL_STATE)\
+    AS(RMH_TIMEOUT)\
+    AS(RMH_NOT_SUPPORTED)\
+    AS(RMH_UNIMPLEMENTED)
+
+
+/* No need to modify the enums here, they are populated from lists above */
+#define AS(x) x,
+typedef enum RMH_Result { RMH_RESULT_LIST } RMH_Result;
+#undef AS
+
+#define AS(x) #x,
+const char * const RMH_ResultStr[] = { RMH_RESULT_LIST };
+#undef AS
 
 typedef enum RMH_LinkStatus {
     RMH_NO_LINK = 0,
@@ -118,20 +127,22 @@ RMH_Result RMH_GetNetworkStatusRx(RMH_Handle handle, RMH_NetworkStatus* response
 
 
 /* Read/Write APIs */
-RMH_Result RMH_GetPassword(RMH_Handle handle, uint8_t* responseBuf, const size_t responseBufSize);
-RMH_Result RMH_SetPassword(RMH_Handle handle, uint8_t* valueBuf, const size_t valueBufLength);
+RMH_Result RMH_GetPassword(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+RMH_Result RMH_SetPassword(RMH_Handle handle, const char* valueBuf);
 
 RMH_Result RMH_GetPreferredNC(RMH_Handle handle, bool* response);
-RMH_Result RMH_SetPreferredNC(RMH_Handle handle, bool value);
+RMH_Result RMH_SetPreferredNC(RMH_Handle handle, const bool value);
 
 RMH_Result RMH_GetPrivacyEnabled(RMH_Handle handle, bool* response);
-RMH_Result RMH_SetPrivacyEnabled(RMH_Handle handle, bool value);
+RMH_Result RMH_SetPrivacyEnabled(RMH_Handle handle, const bool value);
 
 RMH_Result RMH_GetBeaconPowerReductionEnabled(RMH_Handle handle, bool* response);
-RMH_Result RMH_SetBeaconPowerReductionEnabled(RMH_Handle handle, bool value);
+RMH_Result RMH_SetBeaconPowerReductionEnabled(RMH_Handle handle, const bool value);
 
 RMH_Result RMH_GetBeaconPowerReduction(RMH_Handle handle, uint32_t* response);
-RMH_Result RMH_SetBeaconPowerReduction(RMH_Handle handle, uint32_t value);
+RMH_Result RMH_SetBeaconPowerReduction(RMH_Handle handle, const uint32_t value);
+
+static inline const char * const RMH_ResultToString(RMH_Result result) { return RMH_ResultStr[result]; }
 
 #ifdef __cplusplus
 }

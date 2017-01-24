@@ -16,21 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS =
+# Process this file with autoconf to produce a configure script.
 
-# additional include pathes necessary to compile the C/C++ library
-AM_CFLAGS = -I$(top_srcdir)/include 
+AC_PREREQ([2.69])
+AC_INIT([RDK-MOCA-HAL], [1.0], [Thomson_Silvera@comcast.com])
 
-###############################################################################
-# THE LIBRARIES TO BUILD
-###############################################################################
+AC_CONFIG_MACRO_DIR([cfg])
+AC_CONFIG_AUX_DIR([cfg])
+#AC_CONFIG_HEADERS([cfg/config.h])
+AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 1.9])
+LT_INIT
 
-# the list of header files that belong to the library (to be installed later)
-include_HEADERS = $(top_srcdir)/include/moca_hal.h
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
 
+# Checks for libraries.
 
-# the library names to build (note we are building dynamic libs only)
-lib_LTLIBRARIES = librdkmocahal.la
+# Checks for header files.
+AC_CHECK_HEADERS([stdio.h stdlib.h unistd.h])
 
-# the sources to add to the library and to add to the source distribution
-librdkmocahal_la_SOURCES = moca_hal.c
+# Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+
+# Checks for library functions.
+AC_FUNC_ERROR_AT_LINE
+
+AC_CONFIG_FILES([Makefile src/Makefile])
+
+AC_OUTPUT
