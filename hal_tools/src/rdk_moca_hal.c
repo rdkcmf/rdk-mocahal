@@ -4,15 +4,20 @@
 #include <errno.h>
 #include "rdk_moca_hal.h"
 
+typedef struct RMHApp_APIList {
+    char name[32];
+    struct RMHApp_API *apiList[2048];
+    uint32_t apiListSize;
+} RMHApp_APIList;
 
 typedef struct RMHApp {
     RMH_Handle rmh;
     bool interactive;
     int argc;
     char **argv;
-
-    struct RMHApp_API *apiList[2048];
-    uint32_t apiListSize;
+    struct RMHApp_APIList allAPIs;
+    struct RMHApp_APIList *subLists[32];
+    uint32_t numSubLists;
 } RMHApp;
 
 typedef struct RMHApp_API {
@@ -29,17 +34,6 @@ typedef struct RMHApp_API {
     RMHApp_AddAPI(&app, #_api, _handler, _api); \
 }
 
-static inline
-void RMHApp_AddAPI(RMHApp* app, const char* apiName, void *apiHandlerFunc, void *apiFunc) {
-    RMHApp_API *newItem=(RMHApp_API *)malloc(sizeof(RMHApp_API));
-    memset(newItem, 0, sizeof(RMHApp_API));
-    newItem->apiHandlerFunc=(void*)apiHandlerFunc;
-    newItem->name=apiName;
-    newItem->apiFunc=apiFunc;
-    app->apiList[app->apiListSize++]=newItem;
-}
-
-
 
 /***********************************************************
  * User input functions
@@ -54,7 +48,6 @@ RMH_Result ReadLine(const char *prompt, const RMHApp *app, char *buf, const uint
         input=fgets(buf, bufSize, stdin);
         if (input) {
             input[strcspn(input, "\n")] = '\0';
-        printf("Got input %s\n", input);
         }
     }
     else {
@@ -147,9 +140,21 @@ FindAPI(const char *apiName, const RMHApp *app) {
         offset = 4;
     }
 
-    for (i=0; i != app->apiListSize; i++) {
-        if(strncmp(apiName, app->apiList[i]->name+offset,  strlen(app->apiList[i]->name)-offset) == 0) {
-            return app->apiList[i];
+    for (i=0; i != app->allAPIs.apiListSize; i++) {
+        if(strncmp(apiName, app->allAPIs.apiList[i]->name+offset,  strlen(app->allAPIs.apiList[i]->name)-offset) == 0) {
+            return app->allAPIs.apiList[i];
+        }
+    }
+
+  return NULL;
+}
+
+static RMHApp_APIList *
+FindAPIList(const char *listName, const RMHApp *app) {
+    uint32_t i;
+    for (i=0; i != app->numSubLists; i++) {
+        if(strncmp(listName, app->subLists[i]->name,  strlen(app->subLists[i]->name)) == 0) {
+            return app->subLists[i];
         }
     }
 
@@ -157,47 +162,94 @@ FindAPI(const char *apiName, const RMHApp *app) {
 }
 
 
-void DisplayMenu(const RMHApp *app) {
+void DisplayList(const RMHApp *app, const RMHApp_APIList *activeList) {
     uint32_t i;
     printf("\n\n");
-    for (i=0; i != app->apiListSize; i++) {
-        printf("%02d. %s\n", i+1, app->apiList[i]->name);
+    if (activeList) {
+        printf("%02d. %s\n", 1, "Go Back");
+        for (i=0; i != activeList->apiListSize; i++) {
+            printf("%02d. %s\n", i+2, activeList->apiList[i]->name);
+        }
     }
-    printf("%02d. %s\n", i+1, "Exit");
+    else{
+        printf("%02d. %s\n", 1, "Exit");
+        for (i=0; i != app->numSubLists; i++) {
+            printf("%02d. %s\n", i+2, app->subLists[i]->name);
+        }
+    }
 }
 
 void DoInteractive(const RMHApp *app) {
     char inputBuf[8];
     char *input;
     uint32_t option;
+    RMHApp_APIList *activeList=NULL;
 
-    DisplayMenu(app);
+    DisplayList(app, activeList);
     while(true) {
         if (ReadUint32(app, &option)==RMH_SUCCESS) {
             if (option != 0) {
-                if ( option <= app->apiListSize ) {
-                    option--;
-                    RMH_Result ret;
-                    printf("----------------------------------------------------------------------------\n");
-                    printf("%s:\n", app->apiList[option]->name);
-                    ret=app->apiList[option]->apiHandlerFunc(app, app->apiList[option]->apiFunc);
-                    if (ret != RMH_SUCCESS) {
-                        printf("**Error %s!\n", RMH_ResultToString(ret));
-                    }
-                    printf("----------------------------------------------------------------------------\n\n\n");
-                    continue;
+                if ( option == 1 ) {
+                    if (!activeList) return;
+                    activeList=NULL;
                 }
-                else if ( option == app->apiListSize+1 ) {
-                    printf("Exiting...\n");
-                    return;
+                else {
+                    option-=2;
+                    if (activeList && option<activeList->apiListSize) {
+                        RMH_Result ret;
+                        printf("----------------------------------------------------------------------------\n");
+                        printf("%s:\n", activeList->apiList[option]->name);
+                        ret=activeList->apiList[option]->apiHandlerFunc(app, activeList->apiList[option]->apiFunc);
+                        if (ret != RMH_SUCCESS) {
+                            printf("**Error %s!\n", RMH_ResultToString(ret));
+                        }
+                        printf("----------------------------------------------------------------------------\n\n\n");
+                        continue;
+                    }
+                    else if (!activeList && option < app->numSubLists ) {
+                        activeList=app->subLists[option];
+                    }
                 }
             }
             printf("**Error: Invalid selection\n");
         }
-        DisplayMenu(app);
+        DisplayList(app, activeList);
     }
 }
 
+static inline
+void RMHApp_AddAPI(RMHApp* app, const char* apiName, void *apiHandlerFunc, void *apiFunc) {
+    char *lastChar;
+    char subListName[32];
+    RMHApp_APIList *subList;
+    RMHApp_API *newItem=(RMHApp_API *)malloc(sizeof(RMHApp_API));
+    memset(newItem, 0, sizeof(RMHApp_API));
+    newItem->apiHandlerFunc=(void*)apiHandlerFunc;
+    newItem->name=apiName;
+    newItem->apiFunc=apiFunc;
+    app->allAPIs.apiList[app->allAPIs.apiListSize++]=newItem;
+
+    if ((strncmp(apiName,"RMH_",4) == 0) && ((lastChar = strchr(&apiName[4], '_')) != NULL)) {
+        uint32_t copySize= (lastChar-&apiName[4]) > sizeof(subListName) ? sizeof(subListName) : (lastChar-&apiName[4]);
+        strncpy(subListName, &apiName[4], copySize);
+        subListName[copySize]='\0';
+    }
+    else {
+        strcpy(subListName, "Uncategorized");
+    }
+
+    subList=FindAPIList(subListName, app);
+    if (subList) {
+        subList->apiList[subList->apiListSize++]=newItem;
+    }
+    else {
+        subList=(RMHApp_APIList *)malloc(sizeof(RMHApp_APIList));
+        memset(subList, 0, sizeof(RMHApp_APIList));
+        strcpy(subList->name, subListName);
+        app->subLists[app->numSubLists++]=subList;
+        subList->apiList[subList->apiListSize++]=newItem;
+    }
+}
 
 
 
@@ -380,6 +432,8 @@ int main(int argc, char *argv[])
     uint32_t i;
 
     memset(&app, 0, sizeof(app));
+    strcpy(app.allAPIs.name, "All APIs");
+    app.subLists[app.numSubLists++]=&app.allAPIs;
     app.interactive = (argc <= 1);
     app.rmh=RMH_Initialize();
     RMH_Callback_RegisterEvent(app.rmh, EventCallback, (void*)&app, LINK_STATUS_CHANGED | MOCA_VERSION_CHANGED);
@@ -452,8 +506,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    for (i=0; i != app.apiListSize; i++) {
-        free(app.apiList[i]);
+    for (i=0; i != app.allAPIs.apiListSize; i++) {
+        free(app.allAPIs.apiList[i]);
     }
 
     RMH_Destroy(app.rmh);
