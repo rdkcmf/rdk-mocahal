@@ -53,36 +53,53 @@ typedef struct RMH* RMH_Handle;
     AS(RMH_INTERFACE_DOWN, 1)\
     AS(RMH_INTERFACE_UP, 2)
 
+#define ENUM_RMH_MoCAVersion \
+    AS(RMH_MOCA_VERSION_UNKNOWN, 0)\
+    AS(RMH_MOCA_VERSION_10, 0x10)\
+    AS(RMH_MOCA_VERSION_11, 0x11)\
+    AS(RMH_MOCA_VERSION_20, 0x20)
+
 
 /* No need to modify the enums here, they are populated from lists above */
 #define AS(x,y) x=(y),
 typedef enum { ENUM_RMH_Result } RMH_Result;
 typedef enum { ENUM_RMH_LinkStatus } RMH_LinkStatus;
 typedef enum { ENUM_RMH_PowerMode } RMH_PowerMode;
+typedef enum { ENUM_RMH_MoCAVersion } RMH_MoCAVersion;
 #undef AS
 
 #define AS(x,y) #x,
 const char * const RMH_ResultStr[] = { ENUM_RMH_Result };
+static inline const char * const RMH_ResultToString(RMH_Result value) { return RMH_ResultStr[value]; }
+
 const char * const RMH_LinkStatusStr[] = { ENUM_RMH_LinkStatus };
+static inline const char * const RMH_LinkStatusString(RMH_Result value) { return RMH_LinkStatusStr[value]; }
+
 const char * const RMH_PowerModeStr[] = { ENUM_RMH_PowerMode };
+static inline const char * const RMH_PowerModeToString(RMH_PowerMode value) { return RMH_PowerModeStr[value]; }
+
+const char * const RMH_MoCAVersionStr[] = { ENUM_RMH_MoCAVersion };
+static inline const char * const RMH_MoCAVersionToString(RMH_MoCAVersion value) {
+    switch (value) {
+        case RMH_MOCA_VERSION_UNKNOWN:
+            return "Unknown";
+            break;
+        case RMH_MOCA_VERSION_10:
+            return "1.0";
+            break;
+        case RMH_MOCA_VERSION_11:
+            return "1.1";
+            break;
+        case RMH_MOCA_VERSION_20:
+            return "2.0";
+            break;
+        default:
+            return RMH_MoCAVersionStr[value];
+            break;
+    }
+}
 #undef AS
 
-typedef enum RMH_Event {
-    LINK_STATUS_CHANGED =       (1u << 0),
-    MOCA_VERSION_CHANGED =      (1u << 1)
-} RMH_Event;
-
-typedef struct RMH_EventData {
-    union {
-        struct {
-            RMH_LinkStatus status;
-        } LINK_STATUS_CHANGED;
-        struct {
-           char version[32];
-           uint32_t versionId;
-        } MOCA_VERSION_CHANGED;
-    };
-} RMH_EventData;
 
 typedef struct RMH_RemoteNodeStatus{
     uint32_t nodeId;
@@ -102,18 +119,43 @@ typedef struct RMH_NetworkStatus {
 } RMH_NetworkStatus;
 
 
-typedef struct RMH_NodeBitLoadingInfo {
-    uint32_t nodeId;
-    struct {
-        uint32_t nodeId;
-        uint16_t bitloading;
-    } connectedNodes[RMH_MAX_MOCA_NODES];
-} RMH_NodeBitLoadingInfo;
+typedef struct RMH_NetworkList_Uint32_t {
+    uint32_t numNodes;
+    uint32_t nodeId[RMH_MAX_MOCA_NODES];
+    uint32_t nodeValue[RMH_MAX_MOCA_NODES];
+} RMH_NetworkList_Uint32_t;
 
-typedef struct RMH_NetworkBitLoadingInfo {
-    uint32_t remoteNodesPresent;
-    RMH_NodeBitLoadingInfo remoteNodes[RMH_MAX_MOCA_NODES];
-} RMH_NetworkBitLoadingInfo;
+typedef struct RMH_NetworkList_Int32_t {
+    uint32_t numNodes;
+    uint32_t nodeId[RMH_MAX_MOCA_NODES];
+    int32_t nodeValue[RMH_MAX_MOCA_NODES];
+} RMH_NetworkList_Int32_t;
+
+typedef struct RMH_NetworkMesh_Uint32_t {
+    uint32_t numNodes;
+    uint32_t nodeId[RMH_MAX_MOCA_NODES];
+    RMH_NetworkList_Uint32_t nodeValue[RMH_MAX_MOCA_NODES];
+} RMH_NetworkMesh_Uint32_t;
+
+
+typedef enum RMH_Event {
+    LINK_STATUS_CHANGED =       (1u << 0),
+    MOCA_VERSION_CHANGED =      (1u << 1)
+} RMH_Event;
+
+typedef struct RMH_EventData {
+    union {
+        struct {
+            RMH_LinkStatus status;
+        } LINK_STATUS_CHANGED;
+        struct {
+           RMH_MoCAVersion version;
+        } MOCA_VERSION_CHANGED;
+        struct {
+           uint32_t phyRate;
+        } LOW_BANDWIDTH_ALARM;
+    };
+} RMH_EventData;
 
 typedef void (*RMH_EventCallback)(enum RMH_Event event, struct RMH_EventData *eventData, void* userContext);
 
@@ -125,11 +167,19 @@ RMH_Result RMH_Callback_RegisterEvent(RMH_Handle handle, RMH_EventCallback event
 RMH_Result RMH_Self_GetMac(RMH_Handle handle, uint8_t (*response)[6]);
 RMH_Result RMH_Self_GetMacString(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
 RMH_Result RMH_Self_GetLOF(RMH_Handle handle, uint32_t *response);
+RMH_Result RMH_Self_SetLOF(RMH_Handle handle, const uint32_t value);
+RMH_Result RMH_Self_GetScanLOFOnly(RMH_Handle handle, bool *response);
+RMH_Result RMH_Self_SetScanLOFOnly(RMH_Handle handle, const bool value);
 RMH_Result RMH_Self_GetNodeId(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Self_GetPreferredNCEnabled(RMH_Handle handle, bool* response);
 RMH_Result RMH_Self_SetPreferredNCEnabled(RMH_Handle handle, const bool value);
 RMH_Result RMH_Self_GetSoftwareVersion(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
-RMH_Result RMH_Self_GetHighestSupportedMoCAVersion(RMH_Handle handle, char* responseBuf, const size_t verBufSize);
+RMH_Result RMH_Self_GetHighestSupportedMoCAVersion(RMH_Handle handle, RMH_MoCAVersion* response);
+RMH_Result RMH_Self_GetInterfaceEnabled(RMH_Handle handle, bool *response);
+RMH_Result RMH_Self_SetInterfaceEnabled(RMH_Handle handle, const bool value);
+RMH_Result RMH_Self_GetPQOSEgressNumFlows(RMH_Handle handle, uint32_t *response);
+RMH_Result RMH_Self_GetMaxPacketAggr(RMH_Handle handle, uint32_t *response);
+RMH_Result RMH_Self_SetMaxPacketAggr(RMH_Handle handle, const uint32_t value);
 
 RMH_Result RMH_Network_GetLinkStatus(RMH_Handle handle, RMH_LinkStatus* status);
 RMH_Result RMH_Network_GetRFChannelFreq(RMH_Handle handle, uint32_t *response);
@@ -143,10 +193,10 @@ RMH_Result RMH_Network_GetNCMac(RMH_Handle handle, uint8_t (*response)[6]);
 RMH_Result RMH_Network_GetNodeMac(RMH_Handle handle, const uint8_t nodeId, uint8_t (*response)[6]);
 RMH_Result RMH_Network_GetNCMacString(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
 RMH_Result RMH_Network_GetNodeMacString(RMH_Handle handle, const uint8_t nodeId, char* responseBuf, const size_t responseBufSize);
-RMH_Result RMH_Network_GetMoCAVersion(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+RMH_Result RMH_Network_GetMoCAVersion(RMH_Handle handle, RMH_MoCAVersion* response);
 RMH_Result RMH_Network_GetStatusTx(RMH_Handle handle, RMH_NetworkStatus* response);
 RMH_Result RMH_Network_GetStatusRx(RMH_Handle handle, RMH_NetworkStatus* response);
-RMH_Result RMH_Network_GetBitLoadingInfo(RMH_Handle handle, RMH_NetworkBitLoadingInfo* response);
+RMH_Result RMH_Network_GetBitLoadingInfo(RMH_Handle handle, RMH_NetworkMesh_Uint32_t* response);
 
 RMH_Result RMH_Power_GetMode(RMH_Handle handle, RMH_PowerMode* response);
 RMH_Result RMH_Power_GetSupportedModes(RMH_Handle handle, uint32_t* response);
@@ -154,9 +204,13 @@ RMH_Result RMH_Power_GetBeaconPowerReductionEnabled(RMH_Handle handle, bool* res
 RMH_Result RMH_Power_SetBeaconPowerReductionEnabled(RMH_Handle handle, const bool value);
 RMH_Result RMH_Power_GetBeaconPowerReduction(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Power_SetBeaconPowerReduction(RMH_Handle handle, const uint32_t value);
+RMH_Result RMH_Power_GetTPCEnabled(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Power_SetTPCEnabled(RMH_Handle handle, const uint32_t value);
 
 RMH_Result RMH_QAM256_GetCapable(RMH_Handle handle, bool* response);
 RMH_Result RMH_QAM256_SetCapable(RMH_Handle handle, const bool value);
+RMH_Result RMH_QAM256_GetTargetPhyRate(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_QAM256_SetTargetPhyRate(RMH_Handle handle, const uint32_t value);
 
 RMH_Result RMH_Privacy_GetPassword(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
 RMH_Result RMH_Privacy_SetPassword(RMH_Handle handle, const char* valueBuf);
@@ -172,11 +226,19 @@ RMH_Result RMH_Stats_GetAdmissionAttempts(RMH_Handle handle, uint32_t* response)
 RMH_Result RMH_Stats_GetAdmissionFailures(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetAdmissionSucceeded(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetAdmissionsDeniedAsNC(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Stats_GetTxTotalPackets(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Stats_GetTxDroppedPackets(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Stats_GetRxTotalPackets(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Stats_GetRxDroppedPackets(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Stats_GetRxTotalCorrectedCodeWordErrors(RMH_Handle handle, RMH_NetworkList_Uint32_t* response);
+RMH_Result RMH_Stats_GetRxTotalUncorrectedCodeWordErrors(RMH_Handle handle, RMH_NetworkList_Uint32_t* response);
 RMH_Result RMH_Stats_Reset(RMH_Handle handle);
 
 
-static inline const char * const RMH_ResultToString(RMH_Result value) { return RMH_ResultStr[value]; }
-static inline const char * const RMH_PowerModeToString(RMH_PowerMode value) { return RMH_PowerModeStr[value]; }
+RMH_Result RMH_Taboo_GetStartRFChannel(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Taboo_SetStartRFChannel(RMH_Handle handle, const uint32_t value);
+RMH_Result RMH_Taboo_GetFreqMask(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Taboo_SetFreqMask(RMH_Handle handle, const uint32_t value);
 
 #ifdef __cplusplus
 }

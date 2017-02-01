@@ -32,4 +32,4 @@ bin_PROGRAMS = rmh
 
 # the sources to add to the library and to add to the source distribution
 rmh_SOURCES=rdk_moca_hal.c
-rmh_LDFLAGS = "-lrdkmocahal"
+rmh_LDFLAGS = "-lrdkmocahal -ldl"
