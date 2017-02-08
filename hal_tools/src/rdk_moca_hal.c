@@ -183,7 +183,7 @@ FindAPI(const char *apiName, RMHApp *app) {
     }
 
     for (i=0; i != app->allAPIs.apiListSize; i++) {
-        if(strncmp(apiName, app->allAPIs.apiList[i]->name+offset,  strlen(app->allAPIs.apiList[i]->name)-offset) == 0) {
+        if(strcmp(apiName, app->allAPIs.apiList[i]->name+offset) == 0) {
             return app->allAPIs.apiList[i];
         }
     }
@@ -396,6 +396,19 @@ RMH_Result GET_UINT32_HEX(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint
     return ret;
 }
 
+static
+RMH_Result GET_RN_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, uint32_t* response)) {
+    uint32_t response=0;
+    uint32_t nodeId;
+    RMH_Result ret=ReadUint32(app, &nodeId);
+    if (ret == RMH_SUCCESS) {
+        ret = api(app->rmh, nodeId, &response);
+        if (ret == RMH_SUCCESS) {
+            printf("%u\n", response);
+        }
+    }
+    return ret;
+}
 
 static
 RMH_Result GET_BOOL(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, bool* response)) {
@@ -403,6 +416,20 @@ RMH_Result GET_BOOL(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, bool* respons
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
         printf("%s\n", response ? "TRUE" : "FALSE");
+    }
+    return ret;
+}
+
+static
+RMH_Result GET_RN_BOOL(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, bool* response)) {
+    bool response=0;
+    uint32_t nodeId;
+    RMH_Result ret=ReadUint32(app, &nodeId);
+    if (ret == RMH_SUCCESS) {
+        ret = api(app->rmh, nodeId, &response);
+        if (ret == RMH_SUCCESS) {
+            printf("%s\n", response ? "TRUE" : "FALSE");
+        }
     }
     return ret;
 }
@@ -418,12 +445,12 @@ RMH_Result GET_STRING(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, char* respo
 }
 
 static
-RMH_Result GET_NODE_STRING(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, uint8_t nodeId, char* responseBuf, const size_t responseBufSize)) {
+RMH_Result GET_RN_STRING(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const uint8_t nodeId, char* responseBuf, const size_t responseBufSize)) {
     char response[256];
     uint32_t nodeId;
     RMH_Result ret=ReadUint32(app, &nodeId);
     if (ret == RMH_SUCCESS) {
-        RMH_Result ret = api(app->rmh, nodeId, response, sizeof(response));
+        ret = api(app->rmh, nodeId, response, sizeof(response));
         if (ret == RMH_SUCCESS) {
             printf("%s\n", response);
         }
@@ -447,6 +474,20 @@ RMH_Result GET_MOCA_VERSION(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, RMH_M
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
         printf("%s\n", RMH_MoCAVersionToString(response));
+    }
+    return ret;
+}
+
+static
+RMH_Result GET_RN_MOCA_VERSION(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const uint8_t nodeId, RMH_MoCAVersion* response)) {
+    RMH_MoCAVersion response=0;
+    uint32_t nodeId;
+    RMH_Result ret=ReadUint32(app, &nodeId);
+    if (ret == RMH_SUCCESS) {
+        ret = api(app->rmh, nodeId, &response);
+        if (ret == RMH_SUCCESS) {
+            printf("%s\n", RMH_MoCAVersionToString(response));
+        }
     }
     return ret;
 }
@@ -645,6 +686,8 @@ int main(int argc, char *argv[])
     RMH_Callback_RegisterEvent(app.rmh, EventCallback, (void*)&app, LINK_STATUS_CHANGED | MOCA_VERSION_CHANGED | RMH_LOG_PRINT);
 
     /* Add APIs to the list */
+    ADD_API(GET_BOOL,           RMH_Self_GetEnabled);
+    ADD_API(SET_BOOL,           RMH_Self_SetEnabled);
     ADD_API(GET_UINT32,         RMH_Self_GetNodeId);
     ADD_API(GET_UINT32,         RMH_Self_GetLOF);
     ADD_API(SET_UINT32,         RMH_Self_SetLOF);
@@ -659,6 +702,29 @@ int main(int argc, char *argv[])
     ADD_API(SET_UINT32,         RMH_Self_SetMaxPacketAggr);
     ADD_API(GET_UINT32_HEX,     RMH_Self_GetFreqMask);
     ADD_API(SET_UINT32_HEX,     RMH_Self_SetFreqMask);
+    ADD_API(GET_UINT32,         RMH_Self_GetLowBandwidthLimit);
+    ADD_API(SET_UINT32,         RMH_Self_SetLowBandwidthLimit);
+
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetNodeIdFromAssociatedId);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetAssociatedIdFromNodeId);
+    ADD_API(GET_RN_STRING,      RMH_RemoteNode_GetMacString);
+    ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetPreferredNC);
+    ADD_API(GET_RN_MOCA_VERSION,RMH_RemoteNode_GetHighestSupportedMoCAVersion);
+    ADD_API(GET_RN_MOCA_VERSION,RMH_RemoteNode_GetActiveMoCAVersion);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetTxGcdPowerReduction);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetTxUnicastRate);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetRxUnicastRate);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetTxBroadcastRate);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetRxBroadcastRate);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetRxPowerLevel);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetRxBroadcastPowerLevel);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetTxPowerReduction);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetTxPackets);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetRxPackets);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetRxDroppedPackets);
+    ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetQAM256Capable);
+    ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetMaxPacketAggr);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetRxSNR);
 
     ADD_API(GET_BOOL,           RMH_Interface_GetEnabled);
     ADD_API(SET_BOOL,           RMH_Interface_SetEnabled);
@@ -680,49 +746,62 @@ int main(int argc, char *argv[])
 
     ADD_API(GET_POWER_MODE,     RMH_Power_GetMode);
     ADD_API(GET_UINT32_HEX,     RMH_Power_GetSupportedModes);
-
-    ADD_API(GET_UINT32,         RMH_Network_GetLinkStatus);
-    ADD_API(GET_MOCA_VERSION,   RMH_Network_GetMoCAVersion);
-    ADD_API(GET_UINT32,         RMH_Network_GetLinkUptime);
-    ADD_API(GET_UINT32,         RMH_Network_GetRFChannelFreq);
-    ADD_API(GET_UINT32,         RMH_Network_GetPrimaryChannelFreq);
-    ADD_API(GET_UINT32,         RMH_Network_GetSecondaryChannelFreq);
-    ADD_API(GET_UINT32,         RMH_Network_GetNumNodes);
-    ADD_API(GET_UINT32,         RMH_Network_GetNCNodeId);
-    ADD_API(GET_STRING,         RMH_Network_GetNCMacString);
-    ADD_API(GET_UINT32,         RMH_Network_GetBackupNCNodeId);
-    ADD_API(GET_NODE_STRING,    RMH_Network_GetNodeMacString);
-    ADD_API(GET_NET_STATUS,     RMH_Network_GetStatusTx);
-    ADD_API(GET_NET_STATUS,     RMH_Network_GetStatusRx);
-    ADD_API(GET_UINT32_NETMESH, RMH_Network_GetBitLoadingInfo);
-
+    ADD_API(GET_BOOL,           RMH_Power_GetTxPowerControlEnabled);
+    ADD_API(SET_BOOL,           RMH_Power_SetTxPowerControlEnabled);
     ADD_API(GET_UINT32,         RMH_Power_GetTxGcdPowerReduction);
     ADD_API(GET_UINT32_NETLIST, RMH_Power_GetTxGcdPowerReductionList);
     ADD_API(GET_BOOL,           RMH_Power_GetBeaconPowerReductionEnabled);
     ADD_API(SET_BOOL,           RMH_Power_SetBeaconPowerReductionEnabled);
     ADD_API(GET_UINT32,         RMH_Power_GetBeaconPowerReduction);
     ADD_API(SET_UINT32,         RMH_Power_SetBeaconPowerReduction);
-    ADD_API(GET_UINT32,         RMH_Power_GetTPCEnabled);
-    ADD_API(SET_UINT32,         RMH_Power_SetTPCEnabled);
 
-    ADD_API(GET_UINT32,         RMH_Stats_GetFrameCRCErrors);
-    ADD_API(GET_UINT32,         RMH_Stats_GetFrameTimeoutErrors);
+    ADD_API(GET_UINT32,         RMH_Network_GetLinkStatus);
+    ADD_API(GET_UINT32,         RMH_Network_GetNumNodes);
+    ADD_API(GET_UINT32,         RMH_Network_GetNCNodeId);
+    ADD_API(GET_STRING,         RMH_Network_GetNCMacString);
+    ADD_API(GET_UINT32,         RMH_Network_GetBackupNCNodeId);
+    ADD_API(GET_MOCA_VERSION,   RMH_Network_GetMoCAVersion);
+    ADD_API(GET_BOOL,           RMH_Network_GetMixedMode);
+    ADD_API(GET_UINT32,         RMH_Network_GetLinkUptime);
+    ADD_API(GET_UINT32,         RMH_Network_GetRFChannelFreq);
+    ADD_API(GET_UINT32,         RMH_Network_GetPrimaryChannelFreq);
+    ADD_API(GET_UINT32,         RMH_Network_GetSecondaryChannelFreq);
+    ADD_API(GET_NET_STATUS,     RMH_Network_GetStatusTx);
+    ADD_API(GET_NET_STATUS,     RMH_Network_GetStatusRx);
+    ADD_API(GET_UINT32_NETMESH, RMH_Network_GetPhyRates);
+    ADD_API(GET_UINT32_NETMESH, RMH_Network_GetBitLoadingInfo);
+    ADD_API(GET_UINT32,         RMH_Network_GetTxMapRate);
+
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxTotalBytes);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxTotalBytes);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxTotalPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxTotalPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxUnicastPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxUnicastPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxBroadcastPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxBroadcastPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxMulticastPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxMulticastPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxUnknownProtocolPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxDroppedPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxDroppedPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxTotalErrors);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxTotalErrors);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxCRCErrors);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxTimeoutErrors);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxMaxAggregation);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionAttempts);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionSucceeded);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionFailures);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionsDeniedAsNC);
-    ADD_API(GET_UINT32,         RMH_Stats_GetTxTotalPackets);
-    ADD_API(GET_UINT32,         RMH_Stats_GetTxDroppedPackets);
-    ADD_API(GET_UINT32,         RMH_Stats_GetRxTotalPackets);
-    ADD_API(GET_UINT32,         RMH_Stats_GetRxDroppedPackets);
-    ADD_API(GET_UINT32_NETLIST, RMH_Stats_GetRxTotalCorrectedCodeWordErrors);
-    ADD_API(GET_UINT32_NETLIST, RMH_Stats_GetRxTotalUncorrectedCodeWordErrors);
+    ADD_API(GET_UINT32_NETLIST, RMH_Stats_GetRxCorrectedErrors);
+    ADD_API(GET_UINT32_NETLIST, RMH_Stats_GetRxUncorrectedErrors);
     ADD_API(NO_PARAMS,          RMH_Stats_Reset);
 
-    ADD_API(GET_UINT32,         RMH_Taboo_GetStartRFChannel);
-    ADD_API(SET_UINT32,         RMH_Taboo_SetStartRFChannel);
-    ADD_API(GET_UINT32_HEX,     RMH_Taboo_GetFreqMask);
-    ADD_API(SET_UINT32_HEX,     RMH_Taboo_SetFreqMask);
+    ADD_API(GET_UINT32,         RMH_Taboo_GetStartChannel);
+    ADD_API(SET_UINT32,         RMH_Taboo_SetStartChannel);
+    ADD_API(GET_UINT32_HEX,     RMH_Taboo_GetChannelMask);
+    ADD_API(SET_UINT32_HEX,     RMH_Taboo_SetChannelMask);
 
     ADD_API(GET_LOGLEVEL,       RMH_Log_GetLevel);
     ADD_API(SET_LOGLEVEL,       RMH_Log_SetLevel);
