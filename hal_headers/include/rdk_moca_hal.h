@@ -107,53 +107,32 @@ static inline const char * const RMH_MoCAVersionToString(RMH_MoCAVersion value) 
             break;
     }
 }
+
+static inline const char * const
+RMH_MacToString(const uint8_t mac[6], char* responseBuf, const size_t responseBufSize) {
+    if (responseBuf) {
+        int written=snprintf(responseBuf, responseBufSize, "%02X:%02X:%02X:%02X:%02X:%02X",  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        if ((written > 0) && (written < responseBufSize))
+            return responseBuf;
+    }
+    return NULL;
+}
 #undef AS
 
-
-/******************************************************************************************************
-   Do not use. To Be removed
-******************************************************************************************************/
-typedef struct RMH_RemoteNodeStatus{
-    uint32_t nodeId;
-    uint32_t neighNodeId;
-    uint32_t phyRate;
-    int32_t power;
-    uint32_t backoff;
-} RMH_RemoteNodeStatus;
-
-typedef struct RMH_NetworkStatus {
-    uint32_t localNodeId;
-    uint32_t localNeighNodeId;
-    uint32_t ncNodeId;
-    uint32_t ncNeighNodeId;
-    uint32_t remoteNodesPresent;
-    RMH_RemoteNodeStatus remoteNodes[RMH_MAX_MOCA_NODES];
-} RMH_NetworkStatus;
-RMH_Result RMH_Network_GetStatusTx(RMH_Handle handle, RMH_NetworkStatus* response);
-RMH_Result RMH_Network_GetStatusRx(RMH_Handle handle, RMH_NetworkStatus* response);
-/******************************************************************************************************
-   To Be removed
-******************************************************************************************************/
-
-
-
-typedef struct RMH_NetworkList_Uint32_t {
-    uint32_t numNodes;
-    uint32_t nodeId[RMH_MAX_MOCA_NODES];
+typedef struct RMH_NodeList_Uint32_t {
+    bool nodePresent[RMH_MAX_MOCA_NODES];
     uint32_t nodeValue[RMH_MAX_MOCA_NODES];
-} RMH_NetworkList_Uint32_t;
+} RMH_NodeList_Uint32_t;
 
-typedef struct RMH_NetworkList_Int32_t {
-    uint32_t numNodes;
-    uint32_t nodeId[RMH_MAX_MOCA_NODES];
-    int32_t nodeValue[RMH_MAX_MOCA_NODES];
-} RMH_NetworkList_Int32_t;
+typedef struct RMH_NodeList_Mac {
+    bool nodePresent[RMH_MAX_MOCA_NODES];
+    uint8_t nodeValue[RMH_MAX_MOCA_NODES][6];
+} RMH_NodeList_Mac;
 
-typedef struct RMH_NetworkMesh_Uint32_t {
-    uint32_t numNodes;
-    uint32_t nodeId[RMH_MAX_MOCA_NODES];
-    RMH_NetworkList_Uint32_t nodeValue[RMH_MAX_MOCA_NODES];
-} RMH_NetworkMesh_Uint32_t;
+typedef struct RMH_NodeMesh_Uint32_t {
+    bool nodePresent[RMH_MAX_MOCA_NODES];
+    RMH_NodeList_Uint32_t nodeValue[RMH_MAX_MOCA_NODES];
+} RMH_NodeMesh_Uint32_t;
 
 
 typedef enum RMH_Event {
@@ -208,26 +187,26 @@ RMH_Result RMH_Interface_GetEnabled(RMH_Handle handle, bool *response);         
 RMH_Result RMH_Interface_SetEnabled(RMH_Handle handle, const bool value);                                           /* Enable/Disable MoCA thelow level MoCA interface. Do not confuse with RMH_Interface_SetEnabled which sets the MoCA Software to be enabled. */
 RMH_Result RMH_Interface_GetName(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);               /* Interface Name (for example: moca0) */
 RMH_Result RMH_Interface_GetMac(RMH_Handle handle, uint8_t (*response)[6]);                                         /* MAC Address of the Local Node as hex bytes */
-RMH_Result RMH_Interface_GetMacString(RMH_Handle handle, char* responseBuf, const uint32_t responseBufSize);        /* MAC Address of the Local Node as a string */
 
 RMH_Result RMH_Network_GetLinkStatus(RMH_Handle handle, RMH_LinkStatus* status);                                    /* Current Status of the MoCA interface */
 RMH_Result RMH_Network_GetNumNodes(RMH_Handle handle, uint32_t* response);                                          /* Number of Nodes on the MoCA Network - Cannot exceed the maximum supported by MoCA Protocol. */
+RMH_Result RMH_Network_GetNodeId(RMH_Handle handle, RMH_NodeList_Uint32_t* response); /* Return the node ID for each node on the network. A fast way to get the node ids for all nodes INCLUDING the self node */
+RMH_Result RMH_Network_GetAssociateId(RMH_Handle handle, RMH_NodeList_Uint32_t* response); /* Return the associate ID for each node on the network. A fast way to get the node ids for all nodes EXCLUDING the self node */
 RMH_Result RMH_Network_GetNCNodeId(RMH_Handle handle, uint32_t* response);                                          /* Node ID of the Network Coordinator.*/
 RMH_Result RMH_Network_GetBackupNCNodeId(RMH_Handle handle, uint32_t* response);                                    /* Node ID of the Backup Network Coordinator */
 RMH_Result RMH_Network_GetNCMac(RMH_Handle handle, uint8_t (*response)[6]);                                         /* Network Coordinator MAC Address as hex bytes */
-RMH_Result RMH_Network_GetNCMacString(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);          /* Network Coordinator MAC Address as a string */
 RMH_Result RMH_Network_GetLinkUptime(RMH_Handle handle, uint32_t* response);                                        /* Returns time the local node has been part of the network in seconds */
 RMH_Result RMH_Network_GetMixedMode(RMH_Handle handle, bool *response);                                             /* Check if the MoCA interface is enabled or disabled */
 RMH_Result RMH_Network_GetRFChannelFreq(RMH_Handle handle, uint32_t *response);                                     /* The Current Frequency on which the Node formed the Network */
 RMH_Result RMH_Network_GetPrimaryChannelFreq(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Network_GetSecondaryChannelFreq(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Network_GetMoCAVersion(RMH_Handle handle, RMH_MoCAVersion* response);                                /* Current Operating MoCA Protocol Version */
-RMH_Result RMH_Network_GetTxMapRate(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Network_GetTxMapPhyRate(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_Network_GetTxGcdPowerReduction(RMH_Handle handle, RMH_NodeList_Uint32_t* response);               /* Return the Gcd power reduction to all nodes in the network */
 
-RMH_Result RMH_RemoteNode_GetNodeIdFromAssociatedId(RMH_Handle handle, const uint8_t associatedId, uint32_t* response);
-RMH_Result RMH_RemoteNode_GetAssociatedIdFromNodeId(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
+RMH_Result RMH_RemoteNode_GetNodeIdFromAssociateId(RMH_Handle handle, const uint8_t associatedId, uint32_t* response);
+RMH_Result RMH_RemoteNode_GetAssociateIdFromNodeId(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result RMH_RemoteNode_GetMac(RMH_Handle handle, const uint8_t nodeId, uint8_t (*response)[6]);                  /* MAC Address of a given nodeId as hex bytes */
-RMH_Result RMH_RemoteNode_GetMacString(RMH_Handle handle, const uint8_t nodeId, char* responseBuf, const size_t responseBufSize); /* MAC Address of a given nodeId as a string */
 RMH_Result RMH_RemoteNode_GetPreferredNC(RMH_Handle handle, const uint8_t nodeId, bool* response);
 RMH_Result RMH_RemoteNode_GetHighestSupportedMoCAVersion(RMH_Handle handle, const uint8_t nodeId, RMH_MoCAVersion* response);
 RMH_Result RMH_RemoteNode_GetActiveMoCAVersion(RMH_Handle handle, const uint8_t nodeId, RMH_MoCAVersion* response);
@@ -236,8 +215,8 @@ RMH_Result RMH_RemoteNode_GetMaxPacketAggr(RMH_Handle handle, const uint8_t node
 RMH_Result RMH_RemoteNode_GetBondingEnabled(RMH_Handle handle, const uint8_t nodeId, bool* response);
 RMH_Result RMH_RemoteNode_GetConcat(RMH_Handle handle, const uint8_t nodeId, bool* response);
 
-RMH_Result RMH_RemoteNodeRx_GetUnicastRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
-RMH_Result RMH_RemoteNodeRx_GetBroadcastRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
+RMH_Result RMH_RemoteNodeRx_GetUnicastPhyRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
+RMH_Result RMH_RemoteNodeRx_GetBroadcastPhyRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result RMH_RemoteNodeRx_GetPower(RMH_Handle handle, const uint8_t nodeId, float* response);
 RMH_Result RMH_RemoteNodeRx_GetMapPower(RMH_Handle handle, const uint8_t nodeId, float* response);
 RMH_Result RMH_RemoteNodeRx_GetPackets(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
@@ -245,15 +224,14 @@ RMH_Result RMH_RemoteNodeRx_GetSNR(RMH_Handle handle, const uint8_t nodeId, floa
 RMH_Result RMH_RemoteNodeRx_GetCorrectedErrors(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result RMH_RemoteNodeRx_GetUnCorrectedErrors(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 
-RMH_Result RMH_RemoteNodeTx_GetUnicastRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
+RMH_Result RMH_RemoteNodeTx_GetUnicastPhyRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result RMH_RemoteNodeTx_GetUnicastPower(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
-RMH_Result RMH_RemoteNodeTx_GetBroadcastRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
+RMH_Result RMH_RemoteNodeTx_GetBroadcastPhyRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result RMH_RemoteNodeTx_GetPower(RMH_Handle handle, const uint8_t nodeId, int32_t* response);
 RMH_Result RMH_RemoteNodeTx_GetPowerReduction(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 
-RMH_Result RMH_AllNodes_GetPhyRates(RMH_Handle handle, RMH_NetworkMesh_Uint32_t* response);                          /* Return the phy rates of all nodes in Mbps */
-RMH_Result RMH_AllNodes_GetBitLoadingInfo(RMH_Handle handle, RMH_NetworkMesh_Uint32_t* response);
-RMH_Result RMH_AllNodes_GetTxGcdPowerReduction(RMH_Handle handle, RMH_NetworkList_Uint32_t* response);               /* Return the Gcd power reduction to all nodes in the network */
+RMH_Result RMH_NetworkMesh_GetTxUnicastPhyRate(RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);                        /* Return the phy rates of all nodes in Mbps */
+RMH_Result RMH_NetworkMesh_GetBitLoadingInfo(RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);
 
 RMH_Result RMH_Power_GetMode(RMH_Handle handle, RMH_PowerMode* response);
 RMH_Result RMH_Power_GetSupportedModes(RMH_Handle handle, uint32_t* response);
@@ -302,8 +280,8 @@ RMH_Result RMH_Stats_GetRxCRCErrors(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetRxTimeoutErrors(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetRxMaxAggregation(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetTxMaxAggregatedPackets(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize);
-RMH_Result RMH_Stats_GetRxCorrectedErrors(RMH_Handle handle, RMH_NetworkList_Uint32_t* response);
-RMH_Result RMH_Stats_GetRxUncorrectedErrors(RMH_Handle handle, RMH_NetworkList_Uint32_t* response);
+RMH_Result RMH_Stats_GetRxCorrectedErrors(RMH_Handle handle, RMH_NodeList_Uint32_t* response);
+RMH_Result RMH_Stats_GetRxUncorrectedErrors(RMH_Handle handle, RMH_NodeList_Uint32_t* response);
 RMH_Result RMH_Stats_Reset(RMH_Handle handle);
 
 RMH_Result RMH_Taboo_GetStartChannel(RMH_Handle handle, uint32_t* response);
@@ -313,7 +291,6 @@ RMH_Result RMH_Taboo_SetChannelMask(RMH_Handle handle, const uint32_t value);
 
 RMH_Result RMH_Log_GetLevel(RMH_Handle handle, RMH_LogLevel* response);
 RMH_Result RMH_Log_SetLevel(RMH_Handle handle, const RMH_LogLevel value);
-
 
 #ifdef __cplusplus
 }
