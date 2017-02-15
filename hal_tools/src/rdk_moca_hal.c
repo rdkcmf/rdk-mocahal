@@ -95,6 +95,20 @@ RMH_Result ReadUint32(RMHApp *app, uint32_t *value) {
 }
 
 static
+RMH_Result ReadInt32(RMHApp *app, int32_t *value) {
+    char input[16];
+    if (ReadLine("Enter your choice (number): ", app, input, sizeof(input)) == RMH_SUCCESS) {
+        char *end;
+        *value=(uint32_t)strtol(input, &end, 10);
+        if (end != input && *end == '\0' && errno != ERANGE) {
+            return RMH_SUCCESS;
+        }
+    }
+    printf("Bad input. Please enter a valid signed number\n");
+    return RMH_FAILURE;
+}
+
+static
 RMH_Result ReadUint32Hex(RMHApp *app, uint32_t *value) {
     char input[16];
     if (ReadLine("Enter your choice (Hex): ", app, input, sizeof(input)) == RMH_SUCCESS) {
@@ -232,6 +246,9 @@ RMH_Result DoInteractive(RMHApp *app) {
     uint32_t option;
     RMHApp_APIList *activeList=NULL;
 
+    /* Since we're interactive, setup callback notifications */
+    RMH_Callback_RegisterEvent(app->rmh, EventCallback, (void*)&app, LINK_STATUS_CHANGED | MOCA_VERSION_CHANGED | RMH_LOG_PRINT);
+
     DisplayList(app, activeList);
     while(true) {
         if (ReadUint32(app, &option)==RMH_SUCCESS) {
@@ -285,7 +302,7 @@ RMH_Result DoNonInteractive(RMHApp *app) {
             switch (option[1]) {
             case 'm': monitorCallbacks = true; break;
             default:
-                printf("The option '%c'' not supported!\n", option[1]);
+                printf("The option '%c' not supported!\n", option[1]);
                 return RMH_UNIMPLEMENTED;
                 break;
             }
@@ -397,6 +414,31 @@ RMH_Result GET_UINT32_HEX(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint
 }
 
 static
+RMH_Result GET_INT32(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, int32_t* response)) {
+    int32_t response=0;
+    RMH_Result ret = api(app->rmh, &response);
+    if (ret == RMH_SUCCESS) {
+        printf("%d\n", response);
+    }
+    return ret;
+}
+
+static
+RMH_Result GET_UINT32_ARRAY(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed)) {
+    uint32_t responseBuf[256];
+    uint32_t responseBufUsed;
+    int i;
+
+    RMH_Result ret = api(app->rmh, responseBuf, sizeof(responseBuf)/sizeof(responseBuf[0]), &responseBufUsed);
+    if (ret == RMH_SUCCESS) {
+        for (i=0; i < responseBufUsed; i++) {
+            printf("[%02u] %u\n", i, responseBuf[i]);
+        }
+    }
+    return ret;
+}
+
+static
 RMH_Result GET_RN_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, uint32_t* response)) {
     uint32_t response=0;
     uint32_t nodeId;
@@ -411,25 +453,10 @@ RMH_Result GET_RN_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const
 }
 
 static
-RMH_Result GET_UINT32_ARRAY(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize)) {
-    uint32_t responseBuf[10];
-
-    RMH_Result ret = api(app->rmh, responseBuf, sizeof(responseBuf)/sizeof(responseBuf[0]));
-    if (ret == RMH_SUCCESS) {
-        int i;
-        for (i; i < sizeof(responseBuf)/sizeof(responseBuf[0]); i++) {
-            printf("%u ", responseBuf[i]);
-        }
-        printf("\n");
-    }
-    return ret;
-}
-
-static
 RMH_Result GET_RN_INT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, int32_t* response)) {
     int32_t response=0;
     uint32_t nodeId;
-    RMH_Result ret=ReadUint32(app, &nodeId);
+    RMH_Result ret=ReadInt32(app, &nodeId);
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
@@ -638,6 +665,19 @@ RMH_Result SET_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const uint3
 }
 
 static
+RMH_Result SET_INT32(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const int32_t value)) {
+    int32_t value;
+    RMH_Result ret=ReadInt32(app, &value);
+    if (ret == RMH_SUCCESS) {
+        ret = api(app->rmh, value);
+        if (ret == RMH_SUCCESS) {
+            printf("Success setting to %d\n", value);
+        }
+    }
+    return ret;
+}
+
+static
 RMH_Result SET_UINT32_HEX(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const uint32_t value)) {
     uint32_t value;
     RMH_Result ret=ReadUint32Hex(app, &value);
@@ -725,9 +765,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    /* Setup callback notifications */
-    RMH_Callback_RegisterEvent(app.rmh, EventCallback, (void*)&app, LINK_STATUS_CHANGED | MOCA_VERSION_CHANGED | RMH_LOG_PRINT);
-
     /* Add APIs to the list */
     ADD_API(GET_BOOL,           RMH_Self_GetEnabled);
     ADD_API(SET_BOOL,           RMH_Self_SetEnabled);
@@ -747,6 +784,11 @@ int main(int argc, char *argv[])
     ADD_API(SET_UINT32_HEX,     RMH_Self_SetFreqMask);
     ADD_API(GET_UINT32,         RMH_Self_GetLowBandwidthLimit);
     ADD_API(SET_UINT32,         RMH_Self_SetLowBandwidthLimit);
+    ADD_API(GET_UINT32,         RMH_Self_GetMaxBitrate);
+    ADD_API(GET_UINT32,         RMH_Self_GetTxBroadcastPhyRate);
+    ADD_API(SET_INT32,          RMH_Self_SetTxPowerLimit);
+    ADD_API(GET_INT32,          RMH_Self_GetTxPowerLimit);
+    ADD_API(GET_UINT32_ARRAY,   RMH_Self_GetSupportedFrequencies);
 
     ADD_API(GET_BOOL,           RMH_Interface_GetEnabled);
     ADD_API(SET_BOOL,           RMH_Interface_SetEnabled);
@@ -756,7 +798,7 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32,         RMH_Network_GetLinkStatus);
     ADD_API(GET_UINT32,         RMH_Network_GetNumNodes);
     ADD_API(GET_UINT32_NODELIST,RMH_Network_GetNodeId);
-    ADD_API(GET_UINT32_NODELIST,RMH_Network_GetAssociateId);
+    ADD_API(GET_UINT32_NODELIST,RMH_Network_GetAssociatedId);
     ADD_API(GET_UINT32,         RMH_Network_GetNCNodeId);
     ADD_API(GET_MAC,            RMH_Network_GetNCMac);
     ADD_API(GET_UINT32,         RMH_Network_GetBackupNCNodeId);
@@ -769,28 +811,32 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32,         RMH_Network_GetTxMapPhyRate);
     ADD_API(GET_UINT32_NODELIST,RMH_Network_GetTxGcdPowerReduction);
 
-    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetNodeIdFromAssociateId);
-    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetAssociateIdFromNodeId);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetNodeIdFromAssociatedId);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetAssociatedIdFromNodeId);
     ADD_API(GET_RN_MAC,         RMH_RemoteNode_GetMac);
     ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetPreferredNC);
     ADD_API(GET_RN_MOCA_VERSION,RMH_RemoteNode_GetHighestSupportedMoCAVersion);
     ADD_API(GET_RN_MOCA_VERSION,RMH_RemoteNode_GetActiveMoCAVersion);
     ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetQAM256Capable);
-    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetMaxPacketAggr);
-    ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetBondingEnabled);
+    ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetBondingCapable);
     ADD_API(GET_RN_BOOL,        RMH_RemoteNode_GetConcat);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetMaxPacketAggr);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeRx_GetPackets);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeRx_GetUnicastPhyRate);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeRx_GetBroadcastPhyRate);
-    ADD_API(GET_RN_FLOAT,       RMH_RemoteNodeRx_GetPower);
+    ADD_API(GET_RN_FLOAT,       RMH_RemoteNodeRx_GetUnicastPower);
+    ADD_API(GET_RN_FLOAT,       RMH_RemoteNodeRx_GetBroadcastPower);
     ADD_API(GET_RN_FLOAT,       RMH_RemoteNodeRx_GetMapPower);
     ADD_API(GET_RN_FLOAT,       RMH_RemoteNodeRx_GetSNR);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNodeRx_GetTotalErrors);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeRx_GetCorrectedErrors);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeRx_GetUnCorrectedErrors);
-    ADD_API(GET_RN_INT32,       RMH_RemoteNodeTx_GetPower);
+
+    ADD_API(GET_RN_FLOAT,       RMH_RemoteNodeTx_GetUnicastPower);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetPowerReduction);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetUnicastPhyRate);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetBroadcastPhyRate);
+    ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetPackets);
 
     ADD_API(GET_UINT32_NODEMESH,RMH_NetworkMesh_GetTxUnicastPhyRate);
     ADD_API(GET_UINT32_NODEMESH,RMH_NetworkMesh_GetBitLoadingInfo);
@@ -800,8 +846,13 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32,         RMH_QAM256_GetTargetPhyRate);
     ADD_API(SET_UINT32,         RMH_QAM256_SetTargetPhyRate);
 
+    ADD_API(GET_BOOL,           RMH_Turbo_GetCapable);
     ADD_API(GET_BOOL,           RMH_Turbo_GetEnabled);
     ADD_API(SET_BOOL,           RMH_Turbo_SetEnabled);
+
+    ADD_API(GET_BOOL,           RMH_Bonding_GetCapable);
+    ADD_API(GET_BOOL,           RMH_Bonding_GetEnabled);
+    ADD_API(SET_BOOL,           RMH_Bonding_SetEnabled);
 
     ADD_API(GET_STRING,         RMH_Privacy_GetPassword);
     ADD_API(SET_STRING,         RMH_Privacy_SetPassword);
@@ -813,10 +864,10 @@ int main(int argc, char *argv[])
     ADD_API(GET_BOOL,           RMH_Power_GetTxPowerControlEnabled);
     ADD_API(SET_BOOL,           RMH_Power_SetTxPowerControlEnabled);
     ADD_API(GET_UINT32,         RMH_Power_GetTxGcdPowerReduction);
-    ADD_API(GET_BOOL,           RMH_Power_GetBeaconPowerReductionEnabled);
-    ADD_API(SET_BOOL,           RMH_Power_SetBeaconPowerReductionEnabled);
-    ADD_API(GET_UINT32,         RMH_Power_GetBeaconPowerReduction);
-    ADD_API(SET_UINT32,         RMH_Power_SetBeaconPowerReduction);
+    ADD_API(GET_BOOL,           RMH_Power_GetTxBeaconPowerReductionEnabled);
+    ADD_API(SET_BOOL,           RMH_Power_SetTxBeaconPowerReductionEnabled);
+    ADD_API(GET_UINT32,         RMH_Power_GetTxBeaconPowerReduction);
+    ADD_API(SET_UINT32,         RMH_Power_SetTxBeaconPowerReduction);
 
     ADD_API(GET_UINT32,         RMH_Stats_GetTxTotalBytes);
     ADD_API(GET_UINT32,         RMH_Stats_GetRxTotalBytes);
@@ -828,6 +879,12 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32,         RMH_Stats_GetRxBroadcastPackets);
     ADD_API(GET_UINT32,         RMH_Stats_GetTxMulticastPackets);
     ADD_API(GET_UINT32,         RMH_Stats_GetRxMulticastPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxReservationRequestPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxReservationRequestPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxMapPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxMapPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxLinkControlPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxLinkControlPackets);
     ADD_API(GET_UINT32,         RMH_Stats_GetRxUnknownProtocolPackets);
     ADD_API(GET_UINT32,         RMH_Stats_GetTxDroppedPackets);
     ADD_API(GET_UINT32,         RMH_Stats_GetRxDroppedPackets);
@@ -840,6 +897,9 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionSucceeded);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionFailures);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionsDeniedAsNC);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxBeacons);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxBeacons);
+
     ADD_API(GET_UINT32_NODELIST,RMH_Stats_GetRxCorrectedErrors);
     ADD_API(GET_UINT32_NODELIST,RMH_Stats_GetRxUncorrectedErrors);
     ADD_API(GET_UINT32_ARRAY,   RMH_Stats_GetTxMaxAggregatedPackets);
