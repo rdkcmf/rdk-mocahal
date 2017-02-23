@@ -247,7 +247,7 @@ RMH_Result DoInteractive(RMHApp *app) {
     RMHApp_APIList *activeList=NULL;
 
     /* Since we're interactive, setup callback notifications */
-    RMH_Callback_RegisterEvent(app->rmh, EventCallback, (void*)&app, LINK_STATUS_CHANGED | MOCA_VERSION_CHANGED | RMH_LOG_PRINT);
+    RMH_Callback_RegisterEvents(app->rmh, LINK_STATUS_CHANGED | MOCA_VERSION_CHANGED | RMH_LOG_PRINT);
 
     DisplayList(app, activeList);
     while(true) {
@@ -759,7 +759,7 @@ int main(int argc, char *argv[])
     }
 
     /* Connect to MoCA */
-    app.rmh=RMH_Initialize();
+    app.rmh=RMH_Initialize(app.interactive ? EventCallback : NULL, (void*)&app);
     if (!app.libHandle){
         printf("Failed in RMH_Initialize!\n");
         return 1;
@@ -809,7 +809,10 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32,         RMH_Network_GetPrimaryChannelFreq);
     ADD_API(GET_UINT32,         RMH_Network_GetSecondaryChannelFreq);
     ADD_API(GET_UINT32,         RMH_Network_GetTxMapPhyRate);
-    ADD_API(GET_UINT32_NODELIST,RMH_Network_GetTxGcdPowerReduction);
+    ADD_API(GET_UINT32,         RMH_Network_GetTxGcdPowerReduction);
+
+    ADD_API(GET_UINT32_NODEMESH,RMH_NetworkMesh_GetTxUnicastPhyRate);
+    ADD_API(GET_UINT32_NODEMESH,RMH_NetworkMesh_GetBitLoadingInfo);
 
     ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetNodeIdFromAssociatedId);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNode_GetAssociatedIdFromNodeId);
@@ -835,22 +838,16 @@ int main(int argc, char *argv[])
     ADD_API(GET_RN_FLOAT,       RMH_RemoteNodeTx_GetUnicastPower);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetPowerReduction);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetUnicastPhyRate);
-    ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetBroadcastPhyRate);
     ADD_API(GET_RN_UINT32,      RMH_RemoteNodeTx_GetPackets);
 
-    ADD_API(GET_UINT32_NODEMESH,RMH_NetworkMesh_GetTxUnicastPhyRate);
-    ADD_API(GET_UINT32_NODEMESH,RMH_NetworkMesh_GetBitLoadingInfo);
-
-    ADD_API(GET_BOOL,           RMH_QAM256_GetCapable);
-    ADD_API(SET_BOOL,           RMH_QAM256_SetCapable);
+    ADD_API(GET_BOOL,           RMH_QAM256_GetEnabled);
+    ADD_API(SET_BOOL,           RMH_QAM256_SetEnabled);
     ADD_API(GET_UINT32,         RMH_QAM256_GetTargetPhyRate);
     ADD_API(SET_UINT32,         RMH_QAM256_SetTargetPhyRate);
 
-    ADD_API(GET_BOOL,           RMH_Turbo_GetCapable);
     ADD_API(GET_BOOL,           RMH_Turbo_GetEnabled);
     ADD_API(SET_BOOL,           RMH_Turbo_SetEnabled);
 
-    ADD_API(GET_BOOL,           RMH_Bonding_GetCapable);
     ADD_API(GET_BOOL,           RMH_Bonding_GetEnabled);
     ADD_API(SET_BOOL,           RMH_Bonding_SetEnabled);
 
@@ -863,7 +860,6 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32_HEX,     RMH_Power_GetSupportedModes);
     ADD_API(GET_BOOL,           RMH_Power_GetTxPowerControlEnabled);
     ADD_API(SET_BOOL,           RMH_Power_SetTxPowerControlEnabled);
-    ADD_API(GET_UINT32,         RMH_Power_GetTxGcdPowerReduction);
     ADD_API(GET_BOOL,           RMH_Power_GetTxBeaconPowerReductionEnabled);
     ADD_API(SET_BOOL,           RMH_Power_SetTxBeaconPowerReductionEnabled);
     ADD_API(GET_UINT32,         RMH_Power_GetTxBeaconPowerReduction);
@@ -892,7 +888,6 @@ int main(int argc, char *argv[])
     ADD_API(GET_UINT32,         RMH_Stats_GetRxTotalErrors);
     ADD_API(GET_UINT32,         RMH_Stats_GetRxCRCErrors);
     ADD_API(GET_UINT32,         RMH_Stats_GetRxTimeoutErrors);
-    ADD_API(GET_UINT32,         RMH_Stats_GetRxMaxAggregation);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionAttempts);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionSucceeded);
     ADD_API(GET_UINT32,         RMH_Stats_GetAdmissionFailures);
@@ -902,7 +897,10 @@ int main(int argc, char *argv[])
 
     ADD_API(GET_UINT32_NODELIST,RMH_Stats_GetRxCorrectedErrors);
     ADD_API(GET_UINT32_NODELIST,RMH_Stats_GetRxUncorrectedErrors);
-    ADD_API(GET_UINT32_ARRAY,   RMH_Stats_GetTxMaxAggregatedPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetRxTotalAggregatedPackets);
+    ADD_API(GET_UINT32,         RMH_Stats_GetTxTotalAggregatedPackets);
+    ADD_API(GET_UINT32_ARRAY,   RMH_Stats_GetRxPacketAggregation);
+    ADD_API(GET_UINT32_ARRAY,   RMH_Stats_GetTxPacketAggregation);
     ADD_API(NO_PARAMS,          RMH_Stats_Reset);
 
     ADD_API(GET_UINT32,         RMH_Taboo_GetStartChannel);

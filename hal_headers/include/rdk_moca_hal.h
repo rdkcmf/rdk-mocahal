@@ -62,8 +62,8 @@ typedef struct RMH* RMH_Handle;
     AS(RMH_MOCA_VERSION_20, 0x20)
 
 #define ENUM_RMH_LogLevel \
-    AS(RMH_LOG_LEVEL_ERROR, 0)\
-    AS(RMH_LOG_LEVEL_MESSAGE, 1)\
+    AS(RMH_LOG_LEVEL_NONE, 0)\
+    AS(RMH_LOG_LEVEL_ERROR, 1)\
     AS(RMH_LOG_LEVEL_DEBUG, 2)
 
 /* No need to modify the enums here, they are populated from lists above */
@@ -160,10 +160,11 @@ typedef struct RMH_EventData {
 
 typedef void (*RMH_EventCallback)(enum RMH_Event event, struct RMH_EventData *eventData, void* userContext);
 
-RMH_Handle RMH_Initialize();
+RMH_Handle RMH_Initialize(RMH_EventCallback eventCB, void* userContext);
 void RMH_Destroy(RMH_Handle handle);
 
-RMH_Result RMH_Callback_RegisterEvent(RMH_Handle handle, RMH_EventCallback eventCB, void* userContext, uint32_t eventNotifyBitMask);
+RMH_Result RMH_Callback_RegisterEvents(RMH_Handle handle, uint32_t eventNotifyBitMask);
+RMH_Result RMH_Callback_UnregisterEvents(RMH_Handle handle, uint32_t eventNotifyBitMask);
 
 RMH_Result RMH_Self_GetEnabled(RMH_Handle handle, bool *response);                                                  /* Check if MoCA software is active on the interface. Do not confuse with RMH_Interface_GetEnabled which checks if the low level interface is enabled */
 RMH_Result RMH_Self_SetEnabled(RMH_Handle handle, const bool value);                                                /* Set if MoCA software is active on the interface. Do not confuse with RMH_Interface_SetEnabled which sets the low level interface enabled */
@@ -187,7 +188,6 @@ RMH_Result RMH_Self_GetMaxBitrate(RMH_Handle handle, uint32_t *response);       
 RMH_Result RMH_Self_GetTxBroadcastPhyRate(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Self_SetTxPowerLimit(RMH_Handle handle, const int32_t value);
 RMH_Result RMH_Self_GetTxPowerLimit(RMH_Handle handle, int32_t* value);
-RMH_Result RMH_Self_GetBondingCapable(RMH_Handle handle, bool* response);
 RMH_Result RMH_Self_GetSupportedFrequencies(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed);
 
 RMH_Result RMH_Interface_GetEnabled(RMH_Handle handle, bool *response);                                             /* Check if the low level MoCA interface is enabled or disabled. Do not confuse with RMH_Self_GetEnabled which checks if the MoCA Software is active */
@@ -209,7 +209,8 @@ RMH_Result RMH_Network_GetPrimaryChannelFreq(RMH_Handle handle, uint32_t* respon
 RMH_Result RMH_Network_GetSecondaryChannelFreq(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Network_GetMoCAVersion(RMH_Handle handle, RMH_MoCAVersion* response);                                /* Current Operating MoCA Protocol Version */
 RMH_Result RMH_Network_GetTxMapPhyRate(RMH_Handle handle, uint32_t* response);
-RMH_Result RMH_Network_GetTxGcdPowerReduction(RMH_Handle handle, RMH_NodeList_Uint32_t* response);               /* Return the Gcd power reduction to all nodes in the network */
+RMH_Result RMH_Network_GetTxGcdPowerReduction(RMH_Handle handle, uint32_t* response);                               /* Return the Gcd power reduction of the network */
+RMH_Result RMH_Network_GetTabooMask(RMH_Handle handle, uint32_t* response);
 
 RMH_Result RMH_RemoteNode_GetNodeIdFromAssociatedId(RMH_Handle handle, const uint8_t associatedId, uint32_t* response);
 RMH_Result RMH_RemoteNode_GetAssociatedIdFromNodeId(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
@@ -234,7 +235,6 @@ RMH_Result RMH_RemoteNodeRx_GetUnCorrectedErrors(RMH_Handle handle, const uint8_
 RMH_Result RMH_RemoteNodeRx_GetTotalErrors(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 
 RMH_Result RMH_RemoteNodeTx_GetUnicastPhyRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
-RMH_Result RMH_RemoteNodeTx_GetBroadcastPhyRate(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result RMH_RemoteNodeTx_GetUnicastPower(RMH_Handle handle, const uint8_t nodeId, float* response);
 RMH_Result RMH_RemoteNodeTx_GetPowerReduction(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result RMH_RemoteNodeTx_GetPackets(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
@@ -250,10 +250,9 @@ RMH_Result RMH_Power_GetTxBeaconPowerReductionEnabled(RMH_Handle handle, bool* r
 RMH_Result RMH_Power_SetTxBeaconPowerReductionEnabled(RMH_Handle handle, const bool value);
 RMH_Result RMH_Power_GetTxBeaconPowerReduction(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Power_SetTxBeaconPowerReduction(RMH_Handle handle, const uint32_t value);
-RMH_Result RMH_Power_GetTxGcdPowerReduction(RMH_Handle handle, uint32_t* response);                                  /* Return a generic Gcd power reduction value */
 
-RMH_Result RMH_QAM256_GetCapable(RMH_Handle handle, bool* response);                                                /* Return if the local Node is QAM-256 Capable or Not */
-RMH_Result RMH_QAM256_SetCapable(RMH_Handle handle, const bool value);
+RMH_Result RMH_QAM256_GetEnabled(RMH_Handle handle, bool* response);                                                /* Return if the self node is QAM-256 Capable or not. May return RMH_NOT_SUPPORTED */
+RMH_Result RMH_QAM256_SetEnabled(RMH_Handle handle, const bool value);                                              /* Set if the self node should enable QAM-256. May return RMH_NOT_SUPPORTED */
 RMH_Result RMH_QAM256_GetTargetPhyRate(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_QAM256_SetTargetPhyRate(RMH_Handle handle, const uint32_t value);
 
@@ -262,11 +261,9 @@ RMH_Result RMH_Privacy_SetEnabled(RMH_Handle handle, const bool value);         
 RMH_Result RMH_Privacy_GetPassword(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);             /* Return the privacy password */
 RMH_Result RMH_Privacy_SetPassword(RMH_Handle handle, const char* valueBuf);                                        /* Set the privacy password */
 
-RMH_Result RMH_Turbo_GetCapable(RMH_Handle handle, bool* response);
 RMH_Result RMH_Turbo_GetEnabled(RMH_Handle handle, bool* response);
 RMH_Result RMH_Turbo_SetEnabled(RMH_Handle handle, const bool value);
 
-RMH_Result RMH_Bonding_GetCapable(RMH_Handle handle, bool* response);
 RMH_Result RMH_Bonding_GetEnabled(RMH_Handle handle, bool* response);
 RMH_Result RMH_Bonding_SetEnabled(RMH_Handle handle, const bool value);
 
@@ -300,8 +297,11 @@ RMH_Result RMH_Stats_GetTxTotalErrors(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetRxTotalErrors(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetRxCRCErrors(RMH_Handle handle, uint32_t* response);
 RMH_Result RMH_Stats_GetRxTimeoutErrors(RMH_Handle handle, uint32_t* response);
-RMH_Result RMH_Stats_GetRxMaxAggregation(RMH_Handle handle, uint32_t* response);
-RMH_Result RMH_Stats_GetTxMaxAggregatedPackets(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed);
+RMH_Result RMH_Stats_GetRxTotalAggregatedPackets(RMH_Handle handle, uint32_t* response); /* Maximum total number of aggregated packets */
+RMH_Result RMH_Stats_GetTxTotalAggregatedPackets(RMH_Handle handle, uint32_t* response); /* Maximum total number of aggregated packets */
+RMH_Result RMH_Stats_GetRxPacketAggregation(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed);  /* Return Rx packet aggregation. Index 0 is packets without aggregation. Index 1 is 2 pkt aggregation.  Index 2 is 3 pkt aggregation. And so on */
+RMH_Result RMH_Stats_GetTxPacketAggregation(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed);  /* Return Rx packet aggregation. Index 0 is packets without aggregation. Index 1 is 2 pkt aggregation.  Index 2 is 3 pkt aggregation. And so on */
+
 RMH_Result RMH_Stats_GetRxCorrectedErrors(RMH_Handle handle, RMH_NodeList_Uint32_t* response);
 RMH_Result RMH_Stats_GetRxUncorrectedErrors(RMH_Handle handle, RMH_NodeList_Uint32_t* response);
 RMH_Result RMH_Stats_Reset(RMH_Handle handle);
