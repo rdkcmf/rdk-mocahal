@@ -16,32 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-# Process this file with autoconf to produce a configure script.
+SUBDIRS =
+DIST_SUBDIRS =
 
-AC_PREREQ([2.69])
-AC_INIT([RDK-MOCA-HAL], [1.0], [Thomson_Silvera@comcast.com])
+###############################################################################
+# THE LIBRARIES TO BUILD
+###############################################################################
 
-AC_CONFIG_MACRO_DIR([cfg])
-AC_CONFIG_AUX_DIR([cfg])
-#AC_CONFIG_HEADERS([cfg/config.h])
-AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 1.9])
-LT_INIT
+# the Binary names to test build
+bin_PROGRAMS = rmh
 
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
-
-# Checks for libraries.
-
-# Checks for header files.
-AC_CHECK_HEADERS([stdio.h stdlib.h unistd.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_CHECK_HEADER_STDBOOL
-
-# Checks for library functions.
-AC_FUNC_ERROR_AT_LINE
-
-AC_CONFIG_FILES([Makefile src/library/Makefile src/rmh/Makefile])
-
-AC_OUTPUT
+# the sources to add to the library and to add to the source distribution
+rmh_SOURCES=rmh.c
+rmh_LDADD = $(top_builddir)/src/library/librdkmocahal.la

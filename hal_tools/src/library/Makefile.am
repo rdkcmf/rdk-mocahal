@@ -19,17 +19,10 @@
 SUBDIRS =
 DIST_SUBDIRS =
 
-
-# additional include pathes necessary to compile the C/C++ library
-AM_CFLAGS = -I$(top_srcdir)/include
-
 ###############################################################################
 # THE LIBRARIES TO BUILD
 ###############################################################################
 
-# the Binary names to test build
-bin_PROGRAMS = rmh
-
-# the sources to add to the library and to add to the source distribution
-rmh_SOURCES=rdk_moca_hal.c
-rmh_LDFLAGS = "-lrdkmocahal -ldl"
+lib_LTLIBRARIES = librdkmocahal.la
+librdkmocahal_la_SOURCES = librdkmocahal_generic.c
+librdkmocahal_la_LDFLAGS = -lrdkmocahalsoc -ldl

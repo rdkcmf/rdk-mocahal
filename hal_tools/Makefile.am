@@ -16,5 +16,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS = src
-DIST_SUBDIRS = src
+SUBDIRS = src/library src/rmh
+DIST_SUBDIRS = src/library src/rmh
