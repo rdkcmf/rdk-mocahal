@@ -496,7 +496,7 @@ RMH_Result OUT_UINT32_NODEMESH(RMHApp *app, RMH_Result (*api)(RMH_Handle handle,
                 RMH_NodeList_Uint32_t *nl = &response.nodeValue[i];
                 RMH_PrintLog("NodeId:%u\n", i);
                 for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
-                    if (response.nodePresent[j]) {
+                    if (i!=j && response.nodePresent[j]) {
                         RMH_PrintLog("   %u: %u\n", j, nl->nodeValue[j]);
                     }
                 }

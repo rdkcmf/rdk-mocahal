@@ -25,4 +25,4 @@ DIST_SUBDIRS =
 
 lib_LTLIBRARIES = librdkmocahal.la
 librdkmocahal_la_SOURCES = librdkmocahal_generic.c
-librdkmocahal_la_LDFLAGS = -lrdkmocahalsoc -ldl
+librdkmocahal_la_LIBADD = -lrdkmocahalsoc $(top_builddir)/src/librdkmocahalsoc_stubs/librdkmocahalsoc_stubs.la

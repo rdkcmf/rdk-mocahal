@@ -16,5 +16,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS = src/librdkmocahalsoc_stubs src/librdkmocahal src/rmh
-DIST_SUBDIRS = src/librdkmocahalsoc_stubs src/librdkmocahal src/rmh
+SUBDIRS =
+DIST_SUBDIRS =
+
+###############################################################################
+# THE LIBRARIES TO BUILD
+###############################################################################
+
+lib_LTLIBRARIES = librdkmocahalsoc_stubs.la
+librdkmocahalsoc_stubs_la_SOURCES = librdkmocahalsoc_stubs.c

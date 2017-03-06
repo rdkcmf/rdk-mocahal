@@ -42,6 +42,6 @@ AC_CHECK_HEADER_STDBOOL
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
 
-AC_CONFIG_FILES([Makefile src/library/Makefile src/rmh/Makefile])
+AC_CONFIG_FILES([Makefile src/librdkmocahalsoc_stubs/Makefile src/librdkmocahal/Makefile src/rmh/Makefile])
 
 AC_OUTPUT

@@ -163,7 +163,7 @@ static RMH_Result _RMH_Print_Status_NODE_MESH(RMH_Handle handle, const char *api
                 RMH_NodeList_Uint32_t *nl = &response.nodeValue[i];
                 RMH_PrintMsg("    Node %02u:\n", i);
                 for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
-                    if (response.nodePresent[j]) {
+                    if (i != j && response.nodePresent[j]) {
                         RMH_PrintMsg("        Node %02u: %u\n", j, nl->nodeValue[j]);
                     }
                 }
