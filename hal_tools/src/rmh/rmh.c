@@ -20,7 +20,7 @@
     else                                      {fprintf(stdout, "WARNING: " fmt "", ##__VA_ARGS__);} \
 }
 
-#define RMH_PrintLog(fmt, ...) if (RMH_ENABLE_PRINT_LOG) { \
+#define RMH_PrintMsg(fmt, ...) if (RMH_ENABLE_PRINT_LOG) { \
     if (app->printAPINames && app->activeApi) {fprintf(stdout, "%s: " fmt "", app->activeApi ? app->activeApi : "", ##__VA_ARGS__);} \
     else                                      {fprintf(stdout, "" fmt "", ##__VA_ARGS__);} \
 }
@@ -81,7 +81,7 @@ uint32_t ReadLine(const char *prompt, RMHApp *app, char *buf, const uint32_t buf
     const char *input=NULL;
     if (app->interactive) {
         if (prompt)
-            RMH_PrintLog("%s", prompt);
+            RMH_PrintMsg("%s", prompt);
         input=fgets(buf, bufSize, stdin);
         if (input) {
             buf[strcspn(buf, "\n")] = '\0';
@@ -214,13 +214,13 @@ static void EventCallback(enum RMH_Event event, struct RMH_EventData *eventData,
     RMHApp *app=(RMHApp *)userContext;
     switch(event) {
     case LINK_STATUS_CHANGED:
-        RMH_PrintLog("\n%p: Link status changed to %s\n", userContext, RMH_LinkStatusToString(eventData->LINK_STATUS_CHANGED.status));
+        RMH_PrintMsg("\n%p: Link status changed to %s\n", userContext, RMH_LinkStatusToString(eventData->LINK_STATUS_CHANGED.status));
         break;
     case MOCA_VERSION_CHANGED:
-        RMH_PrintLog("\n%p: MoCA Version Changed to %s\n", userContext, RMH_MoCAVersionToString(eventData->MOCA_VERSION_CHANGED.version));
+        RMH_PrintMsg("\n%p: MoCA Version Changed to %s\n", userContext, RMH_MoCAVersionToString(eventData->MOCA_VERSION_CHANGED.version));
         break;
     case RMH_LOG_PRINT:
-        RMH_PrintLog("%s", eventData->RMH_LOG_PRINT.logMsg);
+        RMH_PrintMsg("%s", eventData->RMH_LOG_PRINT.logMsg);
         break;
     default:
         RMH_PrintWrn("Unhandled MoCA event %u!\n", event);
@@ -237,7 +237,7 @@ RMH_Result OUT_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, uint32_t* r
     uint32_t response=0;
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("%u\n", response);
+        RMH_PrintMsg("%u\n", response);
     }
     return ret;
 }
@@ -247,7 +247,7 @@ RMH_Result OUT_UINT32_HEX(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint
     uint32_t response=0;
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("0x%08x\n", response);
+        RMH_PrintMsg("0x%08x\n", response);
     }
     return ret;
 }
@@ -257,7 +257,7 @@ RMH_Result OUT_INT32(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, int32_t* res
     int32_t response=0;
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("%d\n", response);
+        RMH_PrintMsg("%d\n", response);
     }
     return ret;
 }
@@ -271,7 +271,7 @@ RMH_Result OUT_UINT32_ARRAY(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, ui
     RMH_Result ret = api(app->rmh, responseBuf, sizeof(responseBuf)/sizeof(responseBuf[0]), &responseBufUsed);
     if (ret == RMH_SUCCESS) {
         for (i=0; i < responseBufUsed; i++) {
-            RMH_PrintLog("[%02u] %u\n", i, responseBuf[i]);
+            RMH_PrintMsg("[%02u] %u\n", i, responseBuf[i]);
         }
     }
     return ret;
@@ -285,7 +285,7 @@ RMH_Result IN_UINT32_OUT_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("%u\n", response);
+            RMH_PrintMsg("%u\n", response);
         }
     }
     return ret;
@@ -299,7 +299,7 @@ RMH_Result IN_UINT32_OUT_INT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle,
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("%d\n", response);
+            RMH_PrintMsg("%d\n", response);
         }
     }
     return ret;
@@ -313,7 +313,7 @@ RMH_Result IN_UINT32_OUT_FLOAT(RMHApp *app, RMH_Result (*api)(RMH_Handle handle,
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("%.03f\n", response);
+            RMH_PrintMsg("%.03f\n", response);
         }
     }
     return ret;
@@ -324,7 +324,7 @@ RMH_Result OUT_BOOL(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, bool* respons
     bool response=0;
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("%s\n", response ? "TRUE" : "FALSE");
+        RMH_PrintMsg("%s\n", response ? "TRUE" : "FALSE");
     }
     return ret;
 }
@@ -337,7 +337,7 @@ RMH_Result IN_UINT32_OUT_BOOL(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, 
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("%s\n", response ? "TRUE" : "FALSE");
+            RMH_PrintMsg("%s\n", response ? "TRUE" : "FALSE");
         }
     }
     return ret;
@@ -348,7 +348,7 @@ RMH_Result OUT_STRING(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, char* respo
     char response[256];
     RMH_Result ret = api(app->rmh, response, sizeof(response));
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("%s\n", response);
+        RMH_PrintMsg("%s\n", response);
     }
     return ret;
 }
@@ -361,12 +361,11 @@ RMH_Result IN_UINT32_OUT_STRING(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, c
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, response, sizeof(response));
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("%s\n", response);
+            RMH_PrintMsg("%s\n", response);
         }
     }
     return ret;
 }
-
 
 static
 RMH_Result IN_RMH_ENUM(RMHApp *app, const char* const (*api)(const RMH_Result)) {
@@ -375,12 +374,11 @@ RMH_Result IN_RMH_ENUM(RMHApp *app, const char* const (*api)(const RMH_Result)) 
     if (ret == RMH_SUCCESS) {
         const char * str = api(enumIndex);
         if (str) {
-            RMH_PrintLog("%s\n", str);
+            RMH_PrintMsg("%s\n", str);
         }
     }
     return ret;
 }
-
 
 static
 RMH_Result OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint8_t (*response)[6])) {
@@ -388,7 +386,7 @@ RMH_Result OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint8_t (*r
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
         char mac[24];
-        RMH_PrintLog("%s\n", RMH_MacToString(response, mac, sizeof(mac)/sizeof(mac[0])));
+        RMH_PrintMsg("%s\n", RMH_MacToString(response, mac, sizeof(mac)/sizeof(mac[0])));
     }
     return ret;
 }
@@ -401,12 +399,11 @@ RMH_Result IN_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_
         ret = api(app->rmh, mac);
         if (ret == RMH_SUCCESS) {
             char macStr[24];
-            RMH_PrintLog("Success passing to %s\n", RMH_MacToString(mac, macStr, sizeof(macStr)/sizeof(macStr[0])));
+            RMH_PrintMsg("Success passing to %s\n", RMH_MacToString(mac, macStr, sizeof(macStr)/sizeof(macStr[0])));
         }
     }
     return ret;
 }
-
 
 static
 RMH_Result IN_UINT32_OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, uint8_t (*response)[6])) {
@@ -417,7 +414,7 @@ RMH_Result IN_UINT32_OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, c
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
             char mac[24];
-            RMH_PrintLog("%s\n", RMH_MacToString(response, mac, sizeof(mac)/sizeof(mac[0])));
+            RMH_PrintMsg("%s\n", RMH_MacToString(response, mac, sizeof(mac)/sizeof(mac[0])));
         }
     }
     return ret;
@@ -428,7 +425,7 @@ RMH_Result OUT_POWER_MODE(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, RMH_Pow
     RMH_PowerMode response=0;
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("%s\n", RMH_PowerModeToString(response));
+        RMH_PrintMsg("%s\n", RMH_PowerModeToString(response));
     }
     return ret;
 }
@@ -438,7 +435,7 @@ RMH_Result OUT_MOCA_VERSION(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, RMH_M
     RMH_MoCAVersion response=0;
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("%s\n", RMH_MoCAVersionToString(response));
+        RMH_PrintMsg("%s\n", RMH_MoCAVersionToString(response));
     }
     return ret;
 }
@@ -451,7 +448,7 @@ RMH_Result IN_UINT32_OUT_MOCA_VERSION(RMHApp *app, RMH_Result (*api)(RMH_Handle 
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("%s\n", RMH_MoCAVersionToString(response));
+            RMH_PrintMsg("%s\n", RMH_MoCAVersionToString(response));
         }
     }
     return ret;
@@ -462,7 +459,7 @@ RMH_Result OUT_LOGLEVEL(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, RMH_LogLe
     RMH_LogLevel response=0;
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("%s\n", RMH_LogLevelToString(response));
+        RMH_PrintMsg("%s\n", RMH_LogLevelToString(response));
     }
     return ret;
 }
@@ -476,7 +473,7 @@ RMH_Result OUT_UINT32_NODELIST(RMHApp *app, RMH_Result (*api)(RMH_Handle handle,
         int i;
         for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
             if (response.nodePresent[i]) {
-                RMH_PrintLog("NodeId:%u -- %u\n", i, response.nodeValue[i]);
+                RMH_PrintMsg("NodeId:%u -- %u\n", i, response.nodeValue[i]);
             }
         }
     }
@@ -494,13 +491,13 @@ RMH_Result OUT_UINT32_NODEMESH(RMHApp *app, RMH_Result (*api)(RMH_Handle handle,
         for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
             if (response.nodePresent[i]) {
                 RMH_NodeList_Uint32_t *nl = &response.nodeValue[i];
-                RMH_PrintLog("NodeId:%u\n", i);
+                RMH_PrintMsg("NodeId:%u\n", i);
                 for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
                     if (i!=j && response.nodePresent[j]) {
-                        RMH_PrintLog("   %u: %u\n", j, nl->nodeValue[j]);
+                        RMH_PrintMsg("   %u: %u\n", j, nl->nodeValue[j]);
                     }
                 }
-            RMH_PrintLog("\n");
+            RMH_PrintMsg("\n");
             }
         }
     }
@@ -514,7 +511,7 @@ RMH_Result IN_BOOL(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const bool val
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, value);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("Success passing %s\n", value ? "TRUE" : "FALSE");
+            RMH_PrintMsg("Success passing %s\n", value ? "TRUE" : "FALSE");
         }
     }
     return ret;
@@ -527,7 +524,7 @@ RMH_Result IN_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const uint32
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, value);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("Success passing %u\n", value);
+            RMH_PrintMsg("Success passing %u\n", value);
         }
     }
     return ret;
@@ -540,7 +537,7 @@ RMH_Result IN_INT32(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const int32_t
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, value);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("Success passing %d\n", value);
+            RMH_PrintMsg("Success passing %d\n", value);
         }
     }
     return ret;
@@ -553,7 +550,7 @@ RMH_Result IN_UINT32_HEX(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const ui
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, value);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("Success passing 0x%08x\n", value);
+            RMH_PrintMsg("Success passing 0x%08x\n", value);
         }
     }
     return ret;
@@ -566,7 +563,7 @@ RMH_Result IN_STRING(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const char* 
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, input);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("Success passing %s\n", input);
+            RMH_PrintMsg("Success passing %s\n", input);
         }
     }
     return ret;
@@ -578,13 +575,13 @@ RMH_Result IN_LOGLEVEL(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, const RMH_
     int i;
 
     for (i=0; app->interactive && i != sizeof(RMH_LogLevelStr)/sizeof(RMH_LogLevelStr[0]); i++ ) {
-        RMH_PrintLog("%d. %s\n", i, RMH_LogLevelStr[i]);
+        RMH_PrintMsg("%d. %s\n", i, RMH_LogLevelStr[i]);
     }
     RMH_Result ret=ReadLogLevel(app, &value);
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, value);
         if (ret == RMH_SUCCESS) {
-            RMH_PrintLog("Success passing %u\n", value);
+            RMH_PrintMsg("Success passing %u\n", value);
         }
     }
     return ret;
@@ -594,7 +591,7 @@ static
 RMH_Result NO_PARAMS(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh)) {
     RMH_Result ret = api(app->rmh);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintLog("Success\n");
+        RMH_PrintMsg("Success\n");
     }
     return ret;
 }
@@ -649,22 +646,22 @@ FindAPIList(const char *listName, RMHApp *app) {
 
 void DisplayList(RMHApp *app, const RMHApp_APIList *activeList) {
     uint32_t i;
-    RMH_PrintLog("\n\n");
+    RMH_PrintMsg("\n\n");
     if (activeList) {
-        RMH_PrintLog("%02d. %s\n", 1, "Go Back");
+        RMH_PrintMsg("%02d. %s\n", 1, "Go Back");
         for (i=0; i != activeList->apiListSize; i++) {
             if (activeList->apiList[i]->apiFunc) {
-                RMH_PrintLog("%02d. %s\n", i+2, activeList->apiList[i]->name);
+                RMH_PrintMsg("%02d. %s\n", i+2, activeList->apiList[i]->name);
             }
             else {
-                RMH_PrintLog("%02d. %s [UNIMPLEMENTED]\n", i+2, activeList->apiList[i]->name);
+                RMH_PrintMsg("%02d. %s [UNIMPLEMENTED]\n", i+2, activeList->apiList[i]->name);
             }
         }
     }
     else{
-        RMH_PrintLog("%02d. %s\n", 1, "Exit");
+        RMH_PrintMsg("%02d. %s\n", 1, "Exit");
         for (i=0; i != app->numSubLists; i++) {
-            RMH_PrintLog("%02d. %s\n", i+2, app->subLists[i]->name);
+            RMH_PrintMsg("%02d. %s\n", i+2, app->subLists[i]->name);
         }
     }
 }
@@ -689,14 +686,14 @@ RMH_Result DoInteractive(RMHApp *app) {
                     if (activeList && option<activeList->apiListSize) {
                         RMH_Result ret = RMH_UNIMPLEMENTED;
                         app->activeApi=activeList->apiList[option]->name;
-                        RMH_PrintLog("----------------------------------------------------------------------------\n");
+                        RMH_PrintMsg("----------------------------------------------------------------------------\n");
                         if (activeList->apiList[option]->apiFunc) {
                             ret=activeList->apiList[option]->apiHandlerFunc(app, activeList->apiList[option]->apiFunc);
                         }
                         if (ret != RMH_SUCCESS) {
                             RMH_PrintErr("Failed with error: %s!\n", RMH_ResultToString(ret));
                         }
-                        RMH_PrintLog("----------------------------------------------------------------------------\n\n\n");
+                        RMH_PrintMsg("----------------------------------------------------------------------------\n\n\n");
                         app->activeApi=NULL;
                         continue;
                     }
@@ -754,7 +751,7 @@ RMH_Result DoNonInteractive(RMHApp *app) {
     } while(option);
 
     if (app->monitorCallbacks) {
-        RMH_PrintLog("Monitoring for callbacks and MoCA logs. Press enter to exit...\n");
+        RMH_PrintMsg("Monitoring for callbacks and MoCA logs. Press enter to exit...\n");
         fgetc(stdin);
     }
     return RMH_SUCCESS;
@@ -829,7 +826,7 @@ RMH_Result LOCAL_log_stop(RMHApp* app) {
     char fileName[128];
 
     if (RMH_Log_GetFilename(app->rmh, fileName, sizeof(fileName)) == RMH_SUCCESS) {
-        RMH_PrintLog("MoCA stopping logging to -- %s\n", fileName);
+        RMH_PrintMsg("MoCA stopping logging to %s\n", fileName);
 
         if (RMH_Log_SetFilename(app->rmh, NULL) != RMH_SUCCESS) {
             RMH_PrintErr("Failed to stop logging!\n");
@@ -847,6 +844,12 @@ RMH_Result LOCAL_log_stop(RMHApp* app) {
 
 static
 RMH_Result LOCAL_log(RMHApp* app) {
+    char logFileName[1024];
+
+    if (RMH_Log_GetFilename(app->rmh, logFileName, sizeof(logFileName)) == RMH_SUCCESS) {
+        RMH_PrintMsg("Logging to '%s'. Run 'rmh log_stop' to stop.\n", logFileName);
+    }
+
     if (RMH_Log_SetLevel(app->rmh, RMH_LOG_LEVEL_DEBUG) != RMH_SUCCESS) {
         RMH_PrintErr("Failed to set log level to RMH_LOG_LEVEL_DEBUG!\n");
         return RMH_FAILURE;
@@ -856,78 +859,28 @@ RMH_Result LOCAL_log(RMHApp* app) {
 }
 
 static
-RMH_Result WriteVersionTxtToFile(RMHApp* app, const char* filename) {
-    char line[1024];
-    FILE *outFile;
-    FILE *inFile;
-    int i;
-    outFile=fopen(filename, "a");
-    if (outFile == NULL) {
-        return RMH_FAILURE;
-    }
-    inFile=fopen("/version.txt", "r");
-    if (outFile == NULL) {
-        fclose(outFile);
-        return RMH_FAILURE;
-    }
-
-    fprintf(outFile, "= Device Version information =================================================================================\n");
-    for(i=0; i<10; i++) {
-        if (fgets(line, sizeof(line), inFile) == NULL)
-            break;
-        fputs(line, outFile);
-    }
-    fprintf(outFile, "\n\n");
-
-    fclose(outFile);
-    fclose(inFile);
-
-    return RMH_SUCCESS;
-}
-
-static
 RMH_Result LOCAL_log_forever(RMHApp* app) {
-    uint8_t mac[6];
-    char fileName[128];
-    struct tm* tm_info;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    tm_info = localtime(&tv.tv_sec);
+    char logFileName[1024];
 
-    if (RMH_Log_GetFilename(app->rmh, fileName, sizeof(fileName)) == RMH_SUCCESS) {
-        RMH_PrintLog("MoCA stopping logging to -- %s\n", fileName);
+    if (RMH_Log_GetFilename(app->rmh, logFileName, sizeof(logFileName)) == RMH_SUCCESS) {
+        RMH_PrintMsg("Stop logging to '%s'.\n", logFileName);
     }
 
-    if (RMH_Interface_GetMac(app->rmh, &mac) != RMH_SUCCESS) {
-        memset(mac, 0, sizeof(mac));
-    }
-
-    snprintf(fileName, sizeof(fileName), "/opt/rmh_moca_log_%s_MAC_%02X-%02X-%02X-%02X-%02X-%02X_TIME_%02d.%02d.%02d_%02d-%02d-%02d.log",
-#ifdef MACHINE_NAME
-        MACHINE_NAME,
-#else
-        "unknown",
-#endif
-        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
-        tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday, tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);
-
-    if (WriteVersionTxtToFile(app, fileName) != RMH_SUCCESS) {
-        RMH_PrintErr("Failed to dump version.txt in file -- %s\n", fileName);
-    }
-
-    if (RMH_StatusWriteToFile(app->rmh, fileName) != RMH_SUCCESS) {
-        RMH_PrintErr("Failed to dump the status summary in file -- %s\n", fileName);
-    }
-
-    if (RMH_Log_SetFilename(app->rmh, fileName) != RMH_SUCCESS) {
-        RMH_PrintErr("Failed to set log filename to -- %s\n", fileName);
+    if (RMH_Log_CreateNewLogFile(app->rmh, logFileName, sizeof(logFileName)) != RMH_SUCCESS) {
+        RMH_PrintErr("Unable to create dedicated log file!\n");
         return RMH_FAILURE;
     }
 
-    RMH_PrintLog("MoCA now logging to -- %s\n", fileName);
+    if (RMH_Log_SetFilename(app->rmh, logFileName) != RMH_SUCCESS) {
+        RMH_PrintErr("Unable to start logging in %s!\n", logFileName);
+        return RMH_FAILURE;
+    }
 
-    LOCAL_log(app);
-
+    if (RMH_Log_SetLevel(app->rmh, RMH_LOG_LEVEL_DEBUG) != RMH_SUCCESS) {
+        RMH_PrintErr("Failed to set log level to RMH_LOG_LEVEL_DEBUG!\n");
+        return RMH_FAILURE;
+    }
+    RMH_PrintMsg("Started logging enabled to '%s'. Run 'rmh log_stop' to stop.\n", logFileName);
     return RMH_SUCCESS;
 }
 
@@ -998,6 +951,7 @@ int main(int argc, char *argv[])
     ADD_API(OUT_UINT32,                 RMH_Network_GetLinkStatus);
     ADD_API(OUT_UINT32,                 RMH_Network_GetNumNodes);
     ADD_API(OUT_UINT32_NODELIST,        RMH_Network_GetNodeId);
+    ADD_API(OUT_UINT32_NODELIST,        RMH_Network_GetRemoteNodeId);
     ADD_API(OUT_UINT32_NODELIST,        RMH_Network_GetAssociatedId);
     ADD_API(OUT_UINT32,                 RMH_Network_GetNCNodeId);
     ADD_API(OUT_MAC,                    RMH_Network_GetNCMac);

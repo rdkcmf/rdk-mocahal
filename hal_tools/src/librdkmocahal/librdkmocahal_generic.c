@@ -1,4 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <time.h>
+#include <string.h>
+
 
 #include "rdk_moca_hal.h"
 
@@ -8,26 +14,63 @@
 #define RMH_ENABLE_PRINT_LOG 1
 
 
-static FILE *logFile=NULL;
-#define RMH_PrintErr(fmt, ...) if (RMH_ENABLE_PRINT_ERR) {fprintf(logFile ? logFile : stderr, "ERROR: " fmt "", ##__VA_ARGS__);}
-#define RMH_PrintWrn(fmt, ...) if (RMH_ENABLE_PRINT_WRN) {fprintf(logFile ? logFile : stderr, "WARNING: " fmt "", ##__VA_ARGS__);}
-#define RMH_PrintMsg(fmt, ...) if (RMH_ENABLE_PRINT_LOG) {fprintf(logFile ? logFile : stdout, fmt "", ##__VA_ARGS__);}
+static FILE *localLogToFile=NULL;
+#define RMH_PrintErr(fmt, ...) if (RMH_ENABLE_PRINT_ERR) {fprintf(localLogToFile ? localLogToFile : stderr, "ERROR: " fmt "", ##__VA_ARGS__);}
+#define RMH_PrintWrn(fmt, ...) if (RMH_ENABLE_PRINT_WRN) {fprintf(localLogToFile ? localLogToFile : stderr, "WARNING: " fmt "", ##__VA_ARGS__);}
+#define RMH_PrintMsg(fmt, ...) if (RMH_ENABLE_PRINT_LOG) {fprintf(localLogToFile ? localLogToFile : stdout, fmt "", ##__VA_ARGS__);}
 
 #define BRMH_RETURN_IF(expr, ret) { if (expr) { RMH_PrintErr("'" #expr "' is true!"); return ret; } }
 
 
+#define RDK_FILE_PATH_VERSION               "/version.txt"
+#define RDK_FILE_PATH_DEBUG_ENABLE          "/opt/rmh_start_enable_debug"
+#define RDK_FILE_PATH_DEBUG_FOREVER_ENABLE  "/opt/rmh_start_enable_debug_forever"
 
 RMH_Result RMH_Start(RMH_Handle handle) {
     bool started;
 
+    /* Ensure MoCA is disabled on this device */
     BRMH_RETURN_IF(RMH_Self_GetEnabled(handle, &started) != RMH_SUCCESS, RMH_FAILURE);
     if (started) {
         RMH_PrintWrn("MoCA appears to already be started.\n");
         return RMH_INVALID_INTERNAL_STATE;
     }
 
+    /* Return to a known good state */
     BRMH_RETURN_IF(RMH_Self_RestoreDefaultSettings(handle) != RMH_SUCCESS, RMH_FAILURE);
 
+    /***** Setup debug ***********************/
+    if (RMH_Log_SetLevel(handle, RMH_LOG_LEVEL_DEFAULT) != RMH_SUCCESS) {
+        RMH_PrintWrn("Unable to set default log level!\n");
+    }
+
+    if (access(RDK_FILE_PATH_DEBUG_FOREVER_ENABLE, F_OK ) != -1) {
+        char logFileName[1024];
+        if (RMH_Log_CreateNewLogFile(handle, logFileName, sizeof(logFileName)) != RMH_SUCCESS) {
+            RMH_PrintWrn("Unable to create dedicated log file!\n");
+        }
+        else if (RMH_Log_SetFilename(handle, logFileName) != RMH_SUCCESS) {
+            RMH_PrintWrn("Unable to start logging in %s!\n", logFileName);
+        }
+        else if (RMH_Log_SetLevel(handle, RMH_LOG_LEVEL_DEBUG) != RMH_SUCCESS) {
+            RMH_PrintWrn("Failed to set log level to RMH_LOG_LEVEL_DEBUG!\n");
+        }
+        else {
+            RMH_PrintMsg("Setting debug logging enabled to file %s\n", logFileName);
+        }
+    }
+    else if (access(RDK_FILE_PATH_DEBUG_ENABLE, F_OK ) != -1) {
+        if (RMH_Log_SetLevel(handle, RMH_LOG_LEVEL_DEBUG) != RMH_SUCCESS) {
+            RMH_PrintWrn("Unable to enable debug!\n");
+        }
+        else {
+            RMH_PrintMsg("Setting debug logging enabled\n");
+        }
+    }
+    /***** Done setup debug ***********************/
+
+
+    /***** Setup device configuration ***********************/
 #ifdef RMH_START_DEFAULT_SINGLE_CHANEL
     RMH_PrintMsg("Setting RMH_Self_SetLOF: %d\n", RMH_START_DEFAULT_SINGLE_CHANEL);
     BRMH_RETURN_IF(RMH_Self_SetScanLOFOnly(handle, true) != RMH_SUCCESS, RMH_FAILURE);
@@ -55,8 +98,8 @@ RMH_Result RMH_Start(RMH_Handle handle) {
     BRMH_RETURN_IF(RMH_Self_SetPreferredNCEnabled(handle, RMH_START_DEFAULT_PREFERRED_NC) != RMH_SUCCESS, RMH_FAILURE);
 #endif
 
-#ifdef RMH_START_SET_MAC_FROM_PROC
-    {
+#if RMH_START_SET_MAC_FROM_PROC
+    if (RMH_START_SET_MAC_FROM_PROC) {
         char ethName[18];
         unsigned char mac[6];
         char ifacePath[128];
@@ -74,7 +117,9 @@ RMH_Result RMH_Start(RMH_Handle handle) {
         BRMH_RETURN_IF(RMH_Interface_SetMac(handle, mac) != RMH_SUCCESS, RMH_FAILURE);
     }
 #endif
+    /***** Done setup device configuration ***********************/
 
+    /* Enable MoCA */
     if (RMH_Self_SetEnabled(handle, true) != RMH_SUCCESS) {
         RMH_PrintErr("Failed calling RMH_Self_SetEnabled!\n");
         return RMH_FAILURE;
@@ -88,38 +133,88 @@ RMH_Result RMH_Stop(RMH_Handle handle) {
 }
 
 
+RMH_Result RMH_Log_CreateNewLogFile(RMH_Handle handle, char* responseBuf, const size_t responseBufSize) {
+    uint8_t mac[6];
+    char line[1024];
+    int i;
+    struct tm* tm_info;
+    struct timeval tv;
+    FILE *logFile;
+    FILE *verFile;
+    int filenameLength;
+
+    gettimeofday(&tv, NULL);
+    tm_info = localtime(&tv.tv_sec);
+
+    if (RMH_Interface_GetMac(handle, &mac) != RMH_SUCCESS) {
+        memset(mac, 0, sizeof(mac));
+    }
+
+    filenameLength=snprintf(responseBuf, responseBufSize, "/opt/rmh_moca_log_%s_MAC_%02X-%02X-%02X-%02X-%02X-%02X_TIME_%02d.%02d.%02d_%02d-%02d-%02d.log",
+#ifdef MACHINE_NAME
+        MACHINE_NAME,
+#else
+        "unknown",
+#endif
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+        tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday, tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec);
+
+    BRMH_RETURN_IF(filenameLength<0, RMH_FAILURE);
+    BRMH_RETURN_IF(filenameLength>=responseBufSize, RMH_INSUFFICIENT_SPACE);
+
+    logFile=fopen(responseBuf, "w");
+    if (logFile == NULL) {
+        RMH_PrintErr("Unable to open %s for writing!\n", responseBuf);
+        return RMH_FAILURE;
+    }
+    verFile=fopen(RDK_FILE_PATH_VERSION, "r");
+    if (verFile == NULL) {
+        RMH_PrintWrn("Unable to open %s for reading!. Cannot add version information\n", RDK_FILE_PATH_VERSION);
+    }
+    else {
+        fprintf(logFile, "= Device Version information =================================================================================\n");
+        for(i=0; i<10; i++) {
+            if (fgets(line, sizeof(line), verFile) == NULL)
+                break;
+            fputs(line, logFile);
+        }
+        fprintf(logFile, "\n\n");
+        fclose(verFile);
+    }
+    fclose(logFile);
+
+    if (RMH_StatusWriteToFile(handle, responseBuf) != RMH_SUCCESS) {
+        RMH_PrintWrn("Failed to dump the status summary in file -- %s\n", responseBuf);
+    }
+
+    return RMH_SUCCESS;
+}
 
 
-
-
-
-
-
-
-
-
-#define PRINT_STATUS_MACRO(api, type, func, successPrintType, successPrint) { \
+#define PRINT_STATUS_MACRO(api, type, apiFunc, fmt, ...) { \
     type; \
-    ret = func; \
-    if (ret == RMH_SUCCESS) { RMH_PrintMsg("%-50s: " successPrintType "\n", #api, successPrint); } \
+    ret = apiFunc; \
+    if (ret == RMH_SUCCESS) { RMH_PrintMsg("%-50s: " fmt "\n", #api, ##__VA_ARGS__); } \
     else                    { RMH_PrintMsg("%-50s: %s\n", #api,  RMH_ResultToString(ret)); } \
 }
-#define RMH_Print_Status_BOOL(api)              PRINT_STATUS_MACRO(api, bool response,       api(handle, &response),                      "%s",       response ? "TRUE" : "FALSE");
-#define RMH_Print_Status_BOOL_RN(api, i)        PRINT_STATUS_MACRO(api, bool response,       api(handle, i, &response),                   "%s",       response ? "TRUE" : "FALSE");
-#define RMH_Print_Status_UINT32(api)            PRINT_STATUS_MACRO(api, uint32_t response,   api(handle, &response),                      "%u",       response);
-#define RMH_Print_Status_UINT32_RN(api, i)      PRINT_STATUS_MACRO(api, uint32_t response,   api(handle, i, &response),                   "%u",       response);
-#define RMH_Print_Status_UINT32_HEX(api)        PRINT_STATUS_MACRO(api, uint32_t response,   api(handle, &response),                      "0x%08x",   response);
-#define RMH_Print_Status_UINT32_HEX_RN(api, i)  PRINT_STATUS_MACRO(api, uint32_t response,   api(handle, i, &response),                   "0x%08x",   response);
-#define RMH_Print_Status_STRING(api)            PRINT_STATUS_MACRO(api, char response[256],   api(handle, response, sizeof(response)),    "%s",       response);
-#define RMH_Print_Status_STRING_RN(api, i)      PRINT_STATUS_MACRO(api, char response[256],   api(handle, i, response, sizeof(response)), "%s",       response);
-#define RMH_Print_Status_MAC(api)               PRINT_STATUS_MACRO(api, uint8_t response[6];char macStr[24],   api(handle, &response),    "%s",       RMH_MacToString(response, macStr, sizeof(macStr)));
-#define RMH_Print_Status_MAC_RN(api, i)         PRINT_STATUS_MACRO(api, uint8_t response[6];char macStr[24],   api(handle, i, &response), "%s",       RMH_MacToString(response, macStr, sizeof(macStr)));
-#define RMH_Print_Status_MoCAVersion(api)       PRINT_STATUS_MACRO(api, RMH_MoCAVersion response,   api(handle, &response),    "%s",       RMH_MoCAVersionToString(response));
-#define RMH_Print_Status_MoCAVersion_RN(api, i) PRINT_STATUS_MACRO(api, RMH_MoCAVersion response,   api(handle, i, &response), "%s",       RMH_MoCAVersionToString(response));
-#define RMH_Print_Status_PowerMode(api)         PRINT_STATUS_MACRO(api, RMH_PowerMode response,   api(handle, &response),    "%s",       RMH_PowerModeToString(response));
-#define RMH_Print_Status_PowerMode_RN(api, i)   PRINT_STATUS_MACRO(api, RMH_PowerMode response,   api(handle, i, &response),    "%s",       RMH_PowerModeToString(response));
-#define RMH_Print_Status_FLOAT(api)             PRINT_STATUS_MACRO(api, float response,   api(handle, &response),                      "%.02f",       response);
-#define RMH_Print_Status_FLOAT_RN(api, i)       PRINT_STATUS_MACRO(api, float response,   api(handle,i, &response),                    "%.02f",       response);
+#define RMH_Print_Status_BOOL(api)              PRINT_STATUS_MACRO(api, bool response,                          api(handle, &response),                         "%s", response ? "TRUE" : "FALSE");
+#define RMH_Print_Status_BOOL_RN(api, i)        PRINT_STATUS_MACRO(api, bool response,                          api(handle, i, &response),                      "%s", response ? "TRUE" : "FALSE");
+#define RMH_Print_Status_UINT32(api)            PRINT_STATUS_MACRO(api, uint32_t response,                      api(handle, &response),                         "%u", response);
+#define RMH_Print_Status_UINT32_RN(api, i)      PRINT_STATUS_MACRO(api, uint32_t response,                      api(handle, i, &response),                      "%u", response);
+#define RMH_Print_Status_UINT32_HEX(api)        PRINT_STATUS_MACRO(api, uint32_t response,                      api(handle, &response),                         "0x%08x", response);
+#define RMH_Print_Status_UINT32_HEX_RN(api, i)  PRINT_STATUS_MACRO(api, uint32_t response,                      api(handle, i, &response),                      "0x%08x", response);
+#define RMH_Print_Status_UPTIME(api)            PRINT_STATUS_MACRO(api, uint32_t response,                      api(handle, &response),                         "%02uh:%02um:%02us", response/3600, (response%3600)/60, response%60);
+#define RMH_Print_Status_STRING(api)            PRINT_STATUS_MACRO(api, char response[256],                     api(handle, response, sizeof(response)),        "%s", response);
+#define RMH_Print_Status_STRING_RN(api, i)      PRINT_STATUS_MACRO(api, char response[256],                     api(handle, i, response, sizeof(response)),     "%s", response);
+#define RMH_Print_Status_MAC(api)               PRINT_STATUS_MACRO(api, uint8_t response[6];char macStr[24],    api(handle, &response),                         "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
+#define RMH_Print_Status_MAC_RN(api, i)         PRINT_STATUS_MACRO(api, uint8_t response[6];char macStr[24],    api(handle, i, &response),                      "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
+#define RMH_Print_Status_MoCAVersion(api)       PRINT_STATUS_MACRO(api, RMH_MoCAVersion response,               api(handle, &response),                         "%s", RMH_MoCAVersionToString(response));
+#define RMH_Print_Status_MoCAVersion_RN(api, i) PRINT_STATUS_MACRO(api, RMH_MoCAVersion response,               api(handle, i, &response),                      "%s", RMH_MoCAVersionToString(response));
+#define RMH_Print_Status_PowerMode(api)         PRINT_STATUS_MACRO(api, RMH_PowerMode response,                 api(handle, &response),                         "%s", RMH_PowerModeToString(response));
+#define RMH_Print_Status_PowerMode_RN(api, i)   PRINT_STATUS_MACRO(api, RMH_PowerMode response,                 api(handle, i, &response),                      "%s", RMH_PowerModeToString(response));
+#define RMH_Print_Status_FLOAT(api)             PRINT_STATUS_MACRO(api, float response,                         api(handle, &response),                         "%.02f", response);
+#define RMH_Print_Status_FLOAT_RN(api, i)       PRINT_STATUS_MACRO(api, float response,                         api(handle,i, &response),                       "%.02f", response);
+#define RMH_Print_Status_LOG_LEVEL(api)         PRINT_STATUS_MACRO(api, RMH_LogLevel response,                  api(handle, &response),                         "%s", RMH_LogLevelToString(response));
 
 /* Do this one seperate so we can use lsResponse */
 #define RMH_Print_Status_LinkStatus(api) { \
@@ -202,6 +297,8 @@ RMH_Result RMH_Status(RMH_Handle handle) {
     RMH_Print_Status_BOOL(RMH_Privacy_GetEnabled);
     RMH_Print_Status_STRING(RMH_Privacy_GetPassword);
     RMH_Print_Status_BOOL(RMH_Interface_GetEnabled);
+    RMH_Print_Status_LOG_LEVEL(RMH_Log_GetLevel);
+    RMH_Print_Status_STRING(RMH_Log_GetFilename);
 
     ret=RMH_Self_GetEnabled(handle, &enabled);
     if (ret == RMH_SUCCESS && enabled) {
@@ -217,7 +314,7 @@ RMH_Result RMH_Status(RMH_Handle handle) {
             RMH_Print_Status_UINT32(RMH_Network_GetNCNodeId);
             RMH_Print_Status_MAC(RMH_Network_GetNCMac);
             RMH_Print_Status_UINT32(RMH_Network_GetBackupNCNodeId);
-            RMH_Print_Status_UINT32(RMH_Network_GetLinkUptime);
+            RMH_Print_Status_UPTIME(RMH_Network_GetLinkUptime);
             RMH_Print_Status_MoCAVersion(RMH_Network_GetMoCAVersion);
             RMH_Print_Status_BOOL(RMH_Network_GetMixedMode);
             RMH_Print_Status_UINT32(RMH_Network_GetRFChannelFreq);
@@ -259,27 +356,15 @@ RMH_Result RMH_Status(RMH_Handle handle) {
 
 RMH_Result RMH_StatusWriteToFile(RMH_Handle handle, const char* filename) {
     RMH_Result ret;
-    logFile=fopen(filename, "a");
-    if (logFile == NULL) {
+    localLogToFile=fopen(filename, "a");
+    if (localLogToFile == NULL) {
         RMH_PrintErr("Failed to open '%s' for writing!\n", filename);
         return RMH_FAILURE;
     }
 
     ret=RMH_Status(handle);
-    fclose(logFile);
+    fclose(localLogToFile);
+    localLogToFile=NULL;
     return ret;
 }
 
-
-
-#if 0
-    app->libHandle = dlopen("/usr/lib/librdkmocahal.so.0.0.0", RTLD_LOCAL | RTLD_LAZY);
-    if (!app->libHandle){
-        RMH_PrintErr("Unable to open library /usr/lib/librdkmocahal.so.0.0.0!\n");
-        return RMH_FAILURE;
-    }
-
-    *(void **)(&newItem->apiFunc) = dlsym(app->libHandle, apiName);
-
-
-#endif

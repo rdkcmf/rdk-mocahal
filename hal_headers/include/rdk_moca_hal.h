@@ -33,6 +33,7 @@ RMH_Result RMH_Start(RMH_Handle handle); /* Enable MoCA uisng Comcast specific c
 RMH_Result RMH_Stop(RMH_Handle handle);  /* Disable MoCA uisng Comcast specific configuration */
 RMH_Result RMH_Status(RMH_Handle handle);/* Print a status summary of MoCA */
 RMH_Result RMH_StatusWriteToFile(RMH_Handle handle, const char* filename);
+RMH_Result RMH_Log_CreateNewLogFile(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
 
 #ifdef __cplusplus
 }
