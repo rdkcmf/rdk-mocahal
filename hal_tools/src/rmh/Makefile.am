@@ -28,4 +28,4 @@ bin_PROGRAMS = rmh
 
 # the sources to add to the library and to add to the source distribution
 rmh_SOURCES=rmh.c
-rmh_LDADD = $(top_builddir)/src/librdkmocahal/librdkmocahal.la
+rmh_LDADD = $(top_builddir)/src/librdkmocahal/librdkmocahal.la -ldl

@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
+#include <dlfcn.h>
 #include "rdk_moca_hal.h"
 
 #define RMH_ENABLE_PRINT_ERR 1
@@ -40,8 +41,11 @@ typedef struct RMHApp {
     char **argv;
     const char *activeApi;
     struct RMHApp_APIList allAPIs;
+    struct RMHApp_APIList unimplimented;
     struct RMHApp_APIList *subLists[32];
     uint32_t numSubLists;
+    void *socLib;
+    void *socLibStubs;
 } RMHApp;
 
 typedef struct RMHApp_API {
@@ -113,7 +117,7 @@ RMH_Result ReadUint32(RMHApp *app, uint32_t *value) {
 }
 
 static
-RMH_Result ReadMAC(RMHApp *app, uint8_t (*response)[6]) {
+RMH_Result ReadMAC(RMHApp *app, RMH_MacAddress_t* response) {
     char input[18];
     char val[6];
     char dummy;
@@ -278,6 +282,22 @@ RMH_Result OUT_UINT32_ARRAY(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, ui
 }
 
 static
+RMH_Result OUT_MAC_ARRAY(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, RMH_MacAddress_t* responseBuf, const size_t responseBufSize, size_t* responseBufUsed)) {
+    RMH_MacAddress_t responseBuf[32];
+    uint32_t responseBufUsed;
+    char macStr[24];
+    int i;
+
+    RMH_Result ret = api(app->rmh, responseBuf, sizeof(responseBuf)/sizeof(responseBuf[0]), &responseBufUsed);
+    if (ret == RMH_SUCCESS) {
+        for (i=0; i < responseBufUsed; i++) {
+            RMH_PrintMsg("[%02u] %s\n", i, RMH_MacToString(responseBuf[i], macStr, sizeof(macStr)/sizeof(macStr[0])));
+        }
+    }
+    return ret;
+}
+
+static
 RMH_Result IN_UINT32_OUT_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, uint32_t* response)) {
     uint32_t response=0;
     uint32_t nodeId;
@@ -381,7 +401,7 @@ RMH_Result IN_RMH_ENUM(RMHApp *app, const char* const (*api)(const RMH_Result)) 
 }
 
 static
-RMH_Result OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint8_t (*response)[6])) {
+RMH_Result OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, RMH_MacAddress_t* response)) {
     uint8_t response[6];
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
@@ -392,7 +412,7 @@ RMH_Result OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, uint8_t (*r
 }
 
 static
-RMH_Result IN_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t value[6])) {
+RMH_Result IN_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const RMH_MacAddress_t value)) {
     uint8_t mac[6];
     RMH_Result ret=ReadMAC(app, &mac);
     if (ret == RMH_SUCCESS) {
@@ -406,15 +426,46 @@ RMH_Result IN_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_
 }
 
 static
-RMH_Result IN_UINT32_OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, uint8_t (*response)[6])) {
+RMH_Result IN_MAC_OUT_UINT32(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response)) {
+    RMH_MacAddress_t mac;
+    uint32_t response;
+
+    RMH_Result ret=ReadMAC(app, &mac);
+    if (ret == RMH_SUCCESS) {
+        ret = api(app->rmh, mac, &response);
+        if (ret == RMH_SUCCESS) {
+            RMH_PrintMsg("%u\n", response);
+        }
+    }
+    return ret;
+}
+
+static
+RMH_Result IN_MAC_OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const RMH_MacAddress_t flowId, RMH_MacAddress_t* response)) {
+    RMH_MacAddress_t mac;
+    RMH_MacAddress_t response;
+
+    RMH_Result ret=ReadMAC(app, &mac);
+    if (ret == RMH_SUCCESS) {
+        ret = api(app->rmh, mac, &response);
+        if (ret == RMH_SUCCESS) {
+            char mac[24];
+            RMH_PrintMsg("%s\n", RMH_MacToString(response, mac, sizeof(mac)/sizeof(mac[0])));
+        }
+    }
+    return ret;
+}
+
+static
+RMH_Result IN_UINT32_OUT_MAC(RMHApp *app, RMH_Result (*api)(RMH_Handle handle, const uint8_t nodeId, RMH_MacAddress_t* response)) {
     uint8_t response[6];
     uint32_t nodeId;
     RMH_Result ret=ReadUint32(app, &nodeId);
     if (ret == RMH_SUCCESS) {
         ret = api(app->rmh, nodeId, &response);
         if (ret == RMH_SUCCESS) {
-            char mac[24];
-            RMH_PrintMsg("%s\n", RMH_MacToString(response, mac, sizeof(mac)/sizeof(mac[0])));
+            char macStr[24];
+            RMH_PrintMsg("%s\n", RMH_MacToString(response, macStr, sizeof(macStr)/sizeof(macStr[0])));
         }
     }
     return ret;
@@ -426,6 +477,16 @@ RMH_Result OUT_POWER_MODE(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, RMH_Pow
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
         RMH_PrintMsg("%s\n", RMH_PowerModeToString(response));
+    }
+    return ret;
+}
+
+static
+RMH_Result OUT_LINK_STATUS(RMHApp *app, RMH_Result (*api)(RMH_Handle rmh, RMH_LinkStatus* response)) {
+    RMH_LinkStatus response=0;
+    RMH_Result ret = api(app->rmh, &response);
+    if (ret == RMH_SUCCESS) {
+        RMH_PrintMsg("%s\n", RMH_LinkStatusToString(response));
     }
     return ret;
 }
@@ -605,7 +666,6 @@ RMH_Result LOCAL(RMHApp *app, RMH_Result (*api)(RMHApp* app)) {
 /***********************************************************
  * Generic Helper Functions
  ***********************************************************/
-
 static RMHApp_API *
 FindAPI(const char *apiName, RMHApp *app) {
     uint32_t i;
@@ -643,19 +703,13 @@ FindAPIList(const char *listName, RMHApp *app) {
   return NULL;
 }
 
-
 void DisplayList(RMHApp *app, const RMHApp_APIList *activeList) {
     uint32_t i;
     RMH_PrintMsg("\n\n");
     if (activeList) {
         RMH_PrintMsg("%02d. %s\n", 1, "Go Back");
         for (i=0; i != activeList->apiListSize; i++) {
-            if (activeList->apiList[i]->apiFunc) {
-                RMH_PrintMsg("%02d. %s\n", i+2, activeList->apiList[i]->name);
-            }
-            else {
-                RMH_PrintMsg("%02d. %s [UNIMPLEMENTED]\n", i+2, activeList->apiList[i]->name);
-            }
+            RMH_PrintMsg("%02d. %s\n", i+2, activeList->apiList[i]->name);
         }
     }
     else{
@@ -759,6 +813,7 @@ RMH_Result DoNonInteractive(RMHApp *app) {
 
 static inline
 void RMHApp_AddAPI(RMHApp* app, const char* apiName, void *apiHandlerFunc, void *apiFunc) {
+    bool unimplemented = false;
     char *lastChar;
     char subListName[32];
     RMHApp_APIList *subList;
@@ -769,20 +824,35 @@ void RMHApp_AddAPI(RMHApp* app, const char* apiName, void *apiHandlerFunc, void 
     *(void **)(&newItem->apiFunc) = apiFunc;
     app->allAPIs.apiList[app->allAPIs.apiListSize++]=newItem;
 
-    if ((strncmp(apiName,"RMH_",4) == 0) && ((lastChar = strchr(&apiName[4], '_')) != NULL)) {
-        uint32_t copySize= (lastChar-&apiName[4]) > sizeof(subListName) ? sizeof(subListName) : (lastChar-&apiName[4]);
-        strncpy(subListName, &apiName[4], copySize);
-        subListName[copySize]='\0';
-    }
-    else if (strncmp(apiName,"LOCAL_",6) == 0) {
+    if (strncmp(apiName,"LOCAL_",6) == 0) {
         strcpy(subListName, "App Functions");
     }
     else {
-        strcpy(subListName, "Uncategorized");
+        if ((strncmp(apiName,"RMH_",4) == 0) && ((lastChar = strchr(&apiName[4], '_')) != NULL)) {
+            uint32_t copySize= (lastChar-&apiName[4]) > sizeof(subListName) ? sizeof(subListName) : (lastChar-&apiName[4]);
+            strncpy(subListName, &apiName[4], copySize);
+            subListName[copySize]='\0';
+        }
+        else {
+            strcpy(subListName, "Uncategorized");
+        }
+
+        /* Check if this API is unimplemented */
+        if (!app->socLib ||
+            (dlsym(app->socLib, newItem->name) == NULL) ||
+            (dlerror() != NULL)) {
+            /* We can't find this API in the soc libaray. Probably unimplemented */
+
+            if (app->socLibStubs &&
+                (dlsym(app->socLibStubs, newItem->name) != NULL) &&
+                (dlerror() == NULL)) {
+                /* This API *is* in the stubs library so we know it is unimplemented */
+                unimplemented=true;
+            }
+        }
     }
 
-    /* If this API isn't implemented add it to a special list */
-    if (!newItem->apiFunc) {
+    if (unimplemented) {
         subList=FindAPIList("Unimplemented", app);
         if (subList) {
             subList->apiList[subList->apiListSize++]=newItem;
@@ -793,11 +863,11 @@ void RMHApp_AddAPI(RMHApp* app, const char* apiName, void *apiHandlerFunc, void 
             memset(subList, 0, sizeof(RMHApp_APIList));
             strcpy(subList->name, "Unimplemented");
 
-            /* Ensure unimplemented list is at index 0 */
-            for (i=app->numSubLists + 1; i > 0 ; i--) {
+            /* Ensure unimplemented list is at index 1 (index 0 is ALL APIs) */
+            for (i=app->numSubLists + 1; i > 1 ; i--) {
                 app->subLists[i]=app->subLists[i-1];
             }
-            app->subLists[0]=subList;
+            app->subLists[1]=subList;
             subList->apiList[subList->apiListSize++]=newItem;
             app->numSubLists++;
         }
@@ -884,6 +954,20 @@ RMH_Result LOCAL_log_forever(RMHApp* app) {
     return RMH_SUCCESS;
 }
 
+static
+RMH_Result LOCAL_flows(RMHApp* app) {
+    return RMH_PrintFlows(app->rmh);
+}
+
+static
+RMH_Result LOCAL_status(RMHApp* app) {
+    return RMH_PrintStatus(app->rmh);
+}
+
+
+/***********************************************************
+ * Main
+ ***********************************************************/
 int main(int argc, char *argv[])
 {
     RMHApp appStr;
@@ -902,6 +986,14 @@ int main(int argc, char *argv[])
     strcpy(app->allAPIs.name, "All APIs");
     app->subLists[app->numSubLists++]=&app->allAPIs;
 
+    app->socLib = dlopen("librdkmocahalsoc.so", RTLD_LAZY);
+    if (!app->socLib)
+        RMH_PrintErr("Unable to find librdkmocahal.so! All APIs will be unimplemented!\n");
+
+    app->socLibStubs = dlopen("librdkmocahalsoc_stubs.so", RTLD_LAZY);
+    if (!app->socLibStubs)
+        RMH_PrintErr("Unable to find librdkmocahal_stubs.so! Linking issues could happen!\n");
+
     /* Connect to MoCA */
     app->rmh=RMH_Initialize(app->interactive ? EventCallback : NULL, (void*)&app);
     if (!app->rmh){
@@ -913,14 +1005,18 @@ int main(int argc, char *argv[])
     ADD_API(LOCAL,                      LOCAL_log);
     ADD_API(LOCAL,                      LOCAL_log_forever);
     ADD_API(LOCAL,                      LOCAL_log_stop);
+    ADD_API(LOCAL,                      LOCAL_flows);
+    ADD_API(LOCAL,                      LOCAL_status);
 
     /* Add local functions to the list */
     ADD_API(NO_PARAMS,                  RMH_Start);
     ADD_API(NO_PARAMS,                  RMH_Stop);
-    ADD_API(NO_PARAMS,                  RMH_Status);
+    ADD_API(NO_PARAMS,                  RMH_PrintStatus);
+    ADD_API(NO_PARAMS,                  RMH_PrintFlows);
     ADD_API(IN_STRING,                  RMH_StatusWriteToFile);
     ADD_API(OUT_BOOL,                   RMH_Self_GetEnabled);
     ADD_API(IN_BOOL,                    RMH_Self_SetEnabled);
+    ADD_API(OUT_BOOL,                   RMH_Self_GetMoCALinkUp);
     ADD_API(OUT_UINT32,                 RMH_Self_GetNodeId);
     ADD_API(OUT_UINT32,                 RMH_Self_GetLOF);
     ADD_API(IN_UINT32,                  RMH_Self_SetLOF);
@@ -930,7 +1026,6 @@ int main(int argc, char *argv[])
     ADD_API(OUT_STRING,                 RMH_Self_GetSoftwareVersion);
     ADD_API(OUT_BOOL,                   RMH_Self_GetPreferredNCEnabled);
     ADD_API(IN_BOOL,                    RMH_Self_SetPreferredNCEnabled);
-    ADD_API(OUT_UINT32,                 RMH_Self_GetPQOSEgressNumFlows);
     ADD_API(OUT_UINT32,                 RMH_Self_GetMaxPacketAggregation);
     ADD_API(IN_UINT32,                  RMH_Self_SetMaxPacketAggregation);
     ADD_API(OUT_UINT32_HEX,             RMH_Self_GetFreqMask);
@@ -948,7 +1043,7 @@ int main(int argc, char *argv[])
     ADD_API(OUT_STRING,                 RMH_Interface_GetName);
     ADD_API(OUT_MAC,                    RMH_Interface_GetMac);
     ADD_API(IN_MAC,                     RMH_Interface_SetMac);
-    ADD_API(OUT_UINT32,                 RMH_Network_GetLinkStatus);
+    ADD_API(OUT_LINK_STATUS,            RMH_Network_GetLinkStatus);
     ADD_API(OUT_UINT32,                 RMH_Network_GetNumNodes);
     ADD_API(OUT_UINT32_NODELIST,        RMH_Network_GetNodeId);
     ADD_API(OUT_UINT32_NODELIST,        RMH_Network_GetRemoteNodeId);
@@ -1050,6 +1145,30 @@ int main(int argc, char *argv[])
     ADD_API(OUT_UINT32_ARRAY,           RMH_Stats_GetRxPacketAggregation);
     ADD_API(OUT_UINT32_ARRAY,           RMH_Stats_GetTxPacketAggregation);
     ADD_API(NO_PARAMS,                  RMH_Stats_Reset);
+    ADD_API(OUT_UINT32,                 RMH_PQoS_GetNumIngressFlows);
+    ADD_API(OUT_UINT32,                 RMH_Self_GetPQOSEgressNumFlows);
+    ADD_API(IN_UINT32_OUT_UINT32,       RMH_PQoS_GetEgressBandwidth);
+    ADD_API(OUT_MAC_ARRAY,              RMH_PQoS_GetIngressFlowIds);
+    ADD_API(OUT_UINT32,                 RMH_PQoS_GetMaxEgressBandwidth);
+    ADD_API(OUT_UINT32,                 RMH_PQoS_GetMinEgressBandwidth);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetPeakDataRate);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetBurstSize);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetLeaseTime);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetLeaseTimeRemaining);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetFlowTag);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetMaxLatency);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetShortTermAvgRatio);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetMaxRetry);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetVLANTag);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetFlowPer);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetIngressClassificationRule);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetPacketSize);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetTotalTxPackets);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetDSCPMoCA);
+    ADD_API(IN_MAC_OUT_UINT32,          RMH_PQoSFlow_GetDFID);
+    ADD_API(IN_MAC_OUT_MAC,             RMH_PQoSFlow_GetDestination);
+    ADD_API(IN_MAC_OUT_MAC,             RMH_PQoSFlow_GetIngressMac);
+    ADD_API(IN_MAC_OUT_MAC,             RMH_PQoSFlow_GetEgressMac);
     ADD_API(OUT_LOGLEVEL,               RMH_Log_GetLevel);
     ADD_API(IN_LOGLEVEL,                RMH_Log_SetLevel);
     ADD_API(OUT_STRING,                 RMH_Log_GetFilename);
@@ -1063,6 +1182,15 @@ int main(int argc, char *argv[])
     for (i=0; i != app->allAPIs.apiListSize; i++) {
         free(app->allAPIs.apiList[i]);
     }
+
+    if (app->socLib) {
+        dlclose(app->socLib);
+    }
+
+    if (app->socLibStubs) {
+        dlclose(app->socLibStubs);
+    }
+
     RMH_Destroy(app->rmh);
 
     return result;

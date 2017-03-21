@@ -34,7 +34,7 @@ typedef struct RMH* RMH_Handle;
     AS(RMH_INVALID_PARAM, 2)\
     AS(RMH_INVALID_NETWORK_STATE, 3)\
     AS(RMH_INVALID_INTERNAL_STATE, 4)\
-    AS(RMH_INVALID_ID, 4)\
+    AS(RMH_INVALID_ID, 5)\
     AS(RMH_TIMEOUT, 6)\
     AS(RMH_INSUFFICIENT_SPACE, 7)\
     AS(RMH_NOT_SUPPORTED, 8)\
@@ -118,6 +118,8 @@ RMH_MacToString(const uint8_t mac[6], char* responseBuf, const size_t responseBu
 }
 #undef AS
 
+typedef uint8_t RMH_MacAddress_t[6];
+
 typedef struct RMH_NodeList_Uint32_t {
     bool nodePresent[RMH_MAX_MOCA_NODES];
     uint32_t nodeValue[RMH_MAX_MOCA_NODES];
@@ -132,7 +134,6 @@ typedef struct RMH_NodeMesh_Uint32_t {
     bool nodePresent[RMH_MAX_MOCA_NODES];
     RMH_NodeList_Uint32_t nodeValue[RMH_MAX_MOCA_NODES];
 } RMH_NodeMesh_Uint32_t;
-
 
 typedef enum RMH_Event {
     LINK_STATUS_CHANGED =       (1u << 0),

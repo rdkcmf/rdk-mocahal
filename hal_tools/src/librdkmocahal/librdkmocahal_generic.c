@@ -4,6 +4,9 @@
 #include <sys/time.h>
 #include <time.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <sys/sysinfo.h>
+#include <net/if.h>
 
 
 #include "rdk_moca_hal.h"
@@ -11,13 +14,13 @@
 
 #define RMH_ENABLE_PRINT_ERR 1
 #define RMH_ENABLE_PRINT_WRN 1
-#define RMH_ENABLE_PRINT_LOG 1
+#define RMH_ENABLE_PRINT_MSG 1
 
 
 static FILE *localLogToFile=NULL;
 #define RMH_PrintErr(fmt, ...) if (RMH_ENABLE_PRINT_ERR) {fprintf(localLogToFile ? localLogToFile : stderr, "ERROR: " fmt "", ##__VA_ARGS__);}
 #define RMH_PrintWrn(fmt, ...) if (RMH_ENABLE_PRINT_WRN) {fprintf(localLogToFile ? localLogToFile : stderr, "WARNING: " fmt "", ##__VA_ARGS__);}
-#define RMH_PrintMsg(fmt, ...) if (RMH_ENABLE_PRINT_LOG) {fprintf(localLogToFile ? localLogToFile : stdout, fmt "", ##__VA_ARGS__);}
+#define RMH_PrintMsg(fmt, ...) if (RMH_ENABLE_PRINT_MSG) {fprintf(localLogToFile ? localLogToFile : stdout, fmt "", ##__VA_ARGS__);}
 
 #define BRMH_RETURN_IF(expr, ret) { if (expr) { RMH_PrintErr("'" #expr "' is true!"); return ret; } }
 
@@ -206,8 +209,8 @@ RMH_Result RMH_Log_CreateNewLogFile(RMH_Handle handle, char* responseBuf, const 
 #define RMH_Print_Status_UPTIME(api)            PRINT_STATUS_MACRO(api, uint32_t response,                      api(handle, &response),                         "%02uh:%02um:%02us", response/3600, (response%3600)/60, response%60);
 #define RMH_Print_Status_STRING(api)            PRINT_STATUS_MACRO(api, char response[256],                     api(handle, response, sizeof(response)),        "%s", response);
 #define RMH_Print_Status_STRING_RN(api, i)      PRINT_STATUS_MACRO(api, char response[256],                     api(handle, i, response, sizeof(response)),     "%s", response);
-#define RMH_Print_Status_MAC(api)               PRINT_STATUS_MACRO(api, uint8_t response[6];char macStr[24],    api(handle, &response),                         "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
-#define RMH_Print_Status_MAC_RN(api, i)         PRINT_STATUS_MACRO(api, uint8_t response[6];char macStr[24],    api(handle, i, &response),                      "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
+#define RMH_Print_Status_MAC(api)               PRINT_STATUS_MACRO(api, RMH_MacAddress_t response;char macStr[24],    api(handle, &response),                         "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
+#define RMH_Print_Status_MAC_RN(api, i)         PRINT_STATUS_MACRO(api, RMH_MacAddress_t response;char macStr[24],    api(handle, i, &response),                      "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
 #define RMH_Print_Status_MoCAVersion(api)       PRINT_STATUS_MACRO(api, RMH_MoCAVersion response,               api(handle, &response),                         "%s", RMH_MoCAVersionToString(response));
 #define RMH_Print_Status_MoCAVersion_RN(api, i) PRINT_STATUS_MACRO(api, RMH_MoCAVersion response,               api(handle, i, &response),                      "%s", RMH_MoCAVersionToString(response));
 #define RMH_Print_Status_PowerMode(api)         PRINT_STATUS_MACRO(api, RMH_PowerMode response,                 api(handle, &response),                         "%s", RMH_PowerModeToString(response));
@@ -215,6 +218,10 @@ RMH_Result RMH_Log_CreateNewLogFile(RMH_Handle handle, char* responseBuf, const 
 #define RMH_Print_Status_FLOAT(api)             PRINT_STATUS_MACRO(api, float response,                         api(handle, &response),                         "%.02f", response);
 #define RMH_Print_Status_FLOAT_RN(api, i)       PRINT_STATUS_MACRO(api, float response,                         api(handle,i, &response),                       "%.02f", response);
 #define RMH_Print_Status_LOG_LEVEL(api)         PRINT_STATUS_MACRO(api, RMH_LogLevel response,                  api(handle, &response),                         "%s", RMH_LogLevelToString(response));
+
+#define RMH_Print_Status_MAC_FLOW(api, mac)     PRINT_STATUS_MACRO(api, RMH_MacAddress_t response;char macStr[24],    api(handle, mac, &response),                      "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
+#define RMH_Print_Status_UINT32_FLOW(api, mac)  PRINT_STATUS_MACRO(api, uint32_t response,                      api(handle, mac, &response),                    "%u", response);
+
 
 /* Do this one seperate so we can use lsResponse */
 #define RMH_Print_Status_LinkStatus(api) { \
@@ -272,7 +279,7 @@ static RMH_Result _RMH_Print_Status_NODE_MESH(RMH_Handle handle, const char *api
     return RMH_SUCCESS;
 }
 
-RMH_Result RMH_Status(RMH_Handle handle) {
+RMH_Result RMH_PrintStatus(RMH_Handle handle) {
     RMH_Result ret;
     bool enabled;
     int i;
@@ -328,7 +335,7 @@ RMH_Result RMH_Status(RMH_Handle handle) {
             if (ret == RMH_SUCCESS) {
                 for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
                     if (nodes.nodePresent[i]) {
-                        RMH_PrintMsg("\n= RMH Remote Node ID %02u =========================================================================\n", i);
+                        RMH_PrintMsg("\n= RMH Remote Node ID %02u =======\n", i);
                         RMH_Print_Status_MAC_RN(RMH_RemoteNode_GetMac, i);
                         RMH_Print_Status_MoCAVersion_RN(RMH_RemoteNode_GetHighestSupportedMoCAVersion, i);
                         RMH_Print_Status_BOOL_RN(RMH_RemoteNode_GetPreferredNC, i);
@@ -354,6 +361,61 @@ RMH_Result RMH_Status(RMH_Handle handle) {
     return RMH_SUCCESS;
 }
 
+RMH_Result RMH_PrintFlows(RMH_Handle handle) {
+    RMH_Result ret;
+    RMH_MacAddress_t flowIds[64];
+    size_t numFlowIds;
+    char macStr[24];
+    uint32_t leaseTime;
+    int i;
+
+    RMH_PrintMsg("= RMH Local Flows =================================================================================\n");
+    RMH_Print_Status_UINT32(RMH_Self_GetPQOSEgressNumFlows);
+    RMH_Print_Status_UINT32(RMH_PQoS_GetNumIngressFlows);
+    ret = RMH_PQoS_GetIngressFlowIds(handle, flowIds, sizeof(flowIds)/sizeof(flowIds[0]), &numFlowIds);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintWrn("*** Unable to get flow information! RMH_PQoS_GetIngressFlowIds returned %s ***\n", RMH_ResultToString(ret));
+    }
+    else if (numFlowIds != 0) {
+        for (i=0; i < numFlowIds; i++) {
+            RMH_PrintMsg("\n= RMH Flow %u =======\n", i);
+            RMH_PrintMsg("%-50s: %s\n", "Flow Id", RMH_MacToString(flowIds[i], macStr, sizeof(macStr)/sizeof(macStr[0])));
+            RMH_Print_Status_MAC_FLOW(RMH_PQoSFlow_GetIngressMac, flowIds[i]);
+            RMH_Print_Status_MAC_FLOW(RMH_PQoSFlow_GetEgressMac, flowIds[i]);
+            RMH_Print_Status_MAC_FLOW(RMH_PQoSFlow_GetDestination, flowIds[i]);
+            ret = RMH_PQoSFlow_GetLeaseTime(handle, flowIds[i], &leaseTime);
+            if (ret != RMH_SUCCESS) {
+                RMH_PrintWrn("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", RMH_ResultToString(ret));
+            }
+            else {
+                if (leaseTime) {
+                    RMH_PrintMsg("%-50s: %u\n", "RMH_PQoSFlow_GetLeaseTime", leaseTime);
+                    RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetLeaseTimeRemaining, flowIds[i]);
+                }
+                else {
+                    RMH_PrintMsg("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", "INFINITE");
+                }
+            }
+
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetPeakDataRate, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetBurstSize, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetFlowTag, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetPacketSize, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetMaxLatency, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetShortTermAvgRatio, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetMaxRetry, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetFlowPer, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetIngressClassificationRule, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetVLANTag, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetTotalTxPackets, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetDSCPMoCA, flowIds[i]);
+            RMH_Print_Status_UINT32_FLOW(RMH_PQoSFlow_GetDFID, flowIds[i]);
+        }
+    }
+    RMH_PrintMsg("============================================================================================================\n\n");
+    return RMH_SUCCESS;
+}
+
 RMH_Result RMH_StatusWriteToFile(RMH_Handle handle, const char* filename) {
     RMH_Result ret;
     localLogToFile=fopen(filename, "a");
@@ -362,9 +424,148 @@ RMH_Result RMH_StatusWriteToFile(RMH_Handle handle, const char* filename) {
         return RMH_FAILURE;
     }
 
-    ret=RMH_Status(handle);
+    ret=RMH_PrintStatus(handle);
     fclose(localLogToFile);
     localLogToFile=NULL;
     return ret;
 }
 
+/* Return the maximum egress bandwith from all nodes on the network */
+RMH_Result RMH_PQoS_GetMaxEgressBandwidth(RMH_Handle handle, uint32_t* response) {
+    RMH_NodeList_Uint32_t remoteNodes;
+    uint32_t nodeResponse;
+    uint32_t nodeId;
+    RMH_Result ret = RMH_FAILURE;
+
+    *response=0;
+    BRMH_RETURN_IF(RMH_Network_GetRemoteNodeId(handle, &remoteNodes) != RMH_SUCCESS, RMH_FAILURE);
+    for (nodeId = 0; nodeId < RMH_MAX_MOCA_NODES; nodeId++) {
+        if (remoteNodes.nodePresent[nodeId]) {
+            if (RMH_PQoS_GetEgressBandwidth(handle, nodeId, &nodeResponse) == RMH_SUCCESS) {
+                if (nodeResponse > *response) {
+                    *response = nodeResponse;
+                    ret=RMH_SUCCESS;
+                }
+            }
+            else {
+                RMH_PrintWrn("Failed to get info for node Id %u!", nodeId);
+            }
+        }
+    }
+
+    return ret;
+}
+
+/* Return the minumum egress bandwith from all nodes on the network */
+RMH_Result RMH_PQoS_GetMinEgressBandwidth(RMH_Handle handle, uint32_t* response) {
+    RMH_NodeList_Uint32_t remoteNodes;
+    uint32_t nodeResponse;
+    uint32_t nodeId;
+    RMH_Result ret = RMH_FAILURE;
+
+    *response=0xFFFFFFFF;
+    BRMH_RETURN_IF(RMH_Network_GetRemoteNodeId(handle, &remoteNodes) != RMH_SUCCESS, RMH_FAILURE);
+    for (nodeId = 0; nodeId < RMH_MAX_MOCA_NODES; nodeId++) {
+        if (remoteNodes.nodePresent[nodeId]) {
+            if (RMH_PQoS_GetEgressBandwidth(handle, nodeId, &nodeResponse) == RMH_SUCCESS) {
+                if (nodeResponse < *response) {
+                    *response = nodeResponse;
+                    ret=RMH_SUCCESS;
+                }
+            }
+            else {
+                RMH_PrintWrn("Failed to get info for node Id %u!\n", nodeId);
+            }
+        }
+    }
+
+    return ret;
+}
+
+static RMH_Result RMH_pIoctl_get(const char* name, struct ifreq *ifrq) {
+    int fd = -1, rc = 0;
+    RMH_Result ret=RMH_SUCCESS;
+
+    BRMH_RETURN_IF(!name, RMH_INVALID_PARAM)
+    BRMH_RETURN_IF((fd = socket(PF_INET6, SOCK_DGRAM, 0)) < 0, RMH_FAILURE);
+
+    strncpy(ifrq->ifr_name, name, sizeof(ifrq->ifr_name));
+    ifrq->ifr_name[ sizeof(ifrq->ifr_name)-1 ] = 0;
+    rc = ioctl(fd, SIOCGIFFLAGS, ifrq);
+    if (rc < 0)	{
+        RMH_PrintErr("ioctl SIOCGIFFLAGS returned %d!", rc);
+        return RMH_FAILURE;
+    }
+
+    close(fd);
+    return ret;
+}
+
+static RMH_Result RMH_pIoctl_set(struct ifreq *ifrq) {
+    int fd = -1, rc = 0;
+    RMH_Result ret=RMH_SUCCESS;
+
+    BRMH_RETURN_IF((fd = socket(PF_INET6, SOCK_DGRAM, 0)) < 0, RMH_FAILURE);
+    rc = ioctl(fd, SIOCSIFFLAGS, ifrq);
+    if (rc < 0)	{
+        RMH_PrintErr("ioctl SIOCSIFFLAGS returned %d!", rc);
+        return RMH_FAILURE;
+    }
+
+    close(fd);
+    return ret;
+}
+
+RMH_Result RMH_Interface_GetEnabled(RMH_Handle handle, bool *response) {
+    char ethName[18];
+    struct ifreq ifrq;
+
+    BRMH_RETURN_IF(handle==NULL, RMH_INVALID_PARAM);
+    BRMH_RETURN_IF(response==NULL, RMH_INVALID_PARAM);
+    BRMH_RETURN_IF(RMH_Interface_GetName(handle, ethName, sizeof(ethName)) != RMH_SUCCESS, RMH_FAILURE);
+    BRMH_RETURN_IF(RMH_pIoctl_get(ethName, &ifrq) != RMH_SUCCESS, RMH_FAILURE);
+    if ((ifrq.ifr_flags & IFF_UP) &&
+        (ifrq.ifr_flags & IFF_RUNNING)) {
+        *response = true;
+    }
+    else {
+        *response = false;
+    }
+    return RMH_SUCCESS;
+}
+
+RMH_Result RMH_Interface_SetEnabled(RMH_Handle handle, const bool value) {
+    char ethName[18];
+    struct ifreq ifrq;
+    bool selectedValue;
+
+    BRMH_RETURN_IF(handle==NULL, RMH_INVALID_PARAM);
+    BRMH_RETURN_IF(RMH_Interface_GetName(handle, ethName, sizeof(ethName)) != RMH_SUCCESS, RMH_FAILURE);
+    BRMH_RETURN_IF(RMH_pIoctl_get(ethName, &ifrq) != RMH_SUCCESS, RMH_FAILURE);
+    if (value)
+        ifrq.ifr_flags |= IFF_UP|IFF_RUNNING;
+    else
+        ifrq.ifr_flags &= ~(IFF_UP|IFF_RUNNING);
+
+    BRMH_RETURN_IF(RMH_pIoctl_set(&ifrq) != RMH_SUCCESS, RMH_FAILURE);
+
+    RMH_Interface_GetEnabled(handle, &selectedValue);
+    return (selectedValue==value) ? RMH_SUCCESS : RMH_FAILURE;
+}
+
+
+RMH_Result RMH_Network_GetLinkStatus(RMH_Handle handle, RMH_LinkStatus* response) {
+    bool linkUp;
+
+    BRMH_RETURN_IF(handle==NULL, RMH_INVALID_PARAM);
+    BRMH_RETURN_IF(response==NULL, RMH_INVALID_PARAM);
+    if (RMH_Self_GetMoCALinkUp(handle, &linkUp) == RMH_SUCCESS && linkUp) {
+        bool enabled;
+        BRMH_RETURN_IF(RMH_Interface_GetEnabled(handle, &enabled) != RMH_SUCCESS, RMH_FAILURE);
+        *response = enabled ? RMH_INTERFACE_UP : RMH_INTERFACE_DOWN;
+    }
+    else {
+        *response = RMH_NO_LINK;
+    }
+    return RMH_SUCCESS;
+}

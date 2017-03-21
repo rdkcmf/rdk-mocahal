@@ -31,9 +31,16 @@ extern "C" {
 
 RMH_Result RMH_Start(RMH_Handle handle); /* Enable MoCA uisng Comcast specific configuration */
 RMH_Result RMH_Stop(RMH_Handle handle);  /* Disable MoCA uisng Comcast specific configuration */
-RMH_Result RMH_Status(RMH_Handle handle);/* Print a status summary of MoCA */
+RMH_Result RMH_PrintStatus(RMH_Handle handle);/* Print a status summary of MoCA */
+RMH_Result RMH_PrintFlows(RMH_Handle handle);
 RMH_Result RMH_StatusWriteToFile(RMH_Handle handle, const char* filename);
 RMH_Result RMH_Log_CreateNewLogFile(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+RMH_Result RMH_Interface_GetEnabled(RMH_Handle handle, bool *response);                                             /* Check if the low level MoCA interface is enabled or disabled. Do not confuse with RMH_Self_GetEnabled which checks if the MoCA Software is active */
+RMH_Result RMH_Interface_SetEnabled(RMH_Handle handle, const bool value);                                           /* Enable/Disable MoCA thelow level MoCA interface. Do not confuse with RMH_Interface_SetEnabled which sets the MoCA Software to be enabled. */
+RMH_Result RMH_Network_GetLinkStatus(RMH_Handle handle, RMH_LinkStatus* status);                                    /* Current Status of the MoCA interface */
+
+RMH_Result RMH_PQoS_GetMaxEgressBandwidth(RMH_Handle handle, uint32_t* response);
+RMH_Result RMH_PQoS_GetMinEgressBandwidth(RMH_Handle handle, uint32_t* response);
 
 #ifdef __cplusplus
 }

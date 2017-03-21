@@ -39,13 +39,17 @@ extern "C" {
 #endif
 
 RMH_Handle __RMH_INIT_ATTRIB__ RMH_Initialize(RMH_EventCallback eventCB, void* userContext);
-void       __RMH_DEST_ATTRIB__ RMH_Destroy(RMH_Handle handle);
+RMH_Result __RMH_API_ATTRIB__  RMH_Destroy(RMH_Handle handle);
 
 RMH_Result __RMH_API_ATTRIB__ RMH_Callback_RegisterEvents(RMH_Handle handle, uint32_t eventNotifyBitMask);
 RMH_Result __RMH_API_ATTRIB__ RMH_Callback_UnregisterEvents(RMH_Handle handle, uint32_t eventNotifyBitMask);
 
+/********************************************************
+* Self APIs - Operate on the
+********************************************************/
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetEnabled(RMH_Handle handle, bool *response);                                                  /* Check if MoCA software is active on the interface. Do not confuse with RMH_Interface_GetEnabled which checks if the low level interface is enabled */
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_SetEnabled(RMH_Handle handle, const bool value);                                                /* Set if MoCA software is active on the interface. Do not confuse with RMH_Interface_SetEnabled which sets the low level interface enabled */
+RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetMoCALinkUp(RMH_Handle handle, bool* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetNodeId(RMH_Handle handle, uint32_t* response);                                               /* Node ID of the local node.*/
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetLOF(RMH_Handle handle, uint32_t *response);                                                  /* The Last Operating Frequency on which the Node formed the Network earlier */
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_SetLOF(RMH_Handle handle, const uint32_t value);
@@ -57,7 +61,6 @@ RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetSoftwareVersion(RMH_Handle handle, cha
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetHighestSupportedMoCAVersion(RMH_Handle handle, RMH_MoCAVersion* response);                   /* Highest Version of the MoCA Protocol that the Local Node Supports */
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetFreqMask(RMH_Handle handle, uint32_t* response);                                             /* Get of Frequencies that should be used for forming network (bitmask) */
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_SetFreqMask(RMH_Handle handle, const uint32_t value);                                           /* Set of Frequencies that should be used for forming network (bitmask) */
-RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetPQOSEgressNumFlows(RMH_Handle handle, uint32_t *response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetMaxPacketAggregation(RMH_Handle handle, uint32_t *response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_SetMaxPacketAggregation(RMH_Handle handle, const uint32_t value);
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetLowBandwidthLimit(RMH_Handle handle, uint32_t *response);
@@ -65,24 +68,21 @@ RMH_Result __RMH_API_ATTRIB__ RMH_Self_SetLowBandwidthLimit(RMH_Handle handle, c
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetMaxBitrate(RMH_Handle handle, uint32_t *response);                                           /* The maximum PHY rate supported in non-turbo mode in Mbps */
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetTxBroadcastPhyRate(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_SetTxPowerLimit(RMH_Handle handle, const int32_t value);
-RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetTxPowerLimit(RMH_Handle handle, int32_t* value);
+RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetTxPowerLimit(RMH_Handle handle, int32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetSupportedFrequencies(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed);
 RMH_Result __RMH_API_ATTRIB__ RMH_Self_RestoreDefaultSettings(RMH_Handle handle);
 
-RMH_Result __RMH_API_ATTRIB__ RMH_Interface_GetEnabled(RMH_Handle handle, bool *response);                                             /* Check if the low level MoCA interface is enabled or disabled. Do not confuse with RMH_Self_GetEnabled which checks if the MoCA Software is active */
-RMH_Result __RMH_API_ATTRIB__ RMH_Interface_SetEnabled(RMH_Handle handle, const bool value);                                           /* Enable/Disable MoCA thelow level MoCA interface. Do not confuse with RMH_Interface_SetEnabled which sets the MoCA Software to be enabled. */
 RMH_Result __RMH_API_ATTRIB__ RMH_Interface_GetName(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);               /* Interface Name (for example: moca0) */
-RMH_Result __RMH_API_ATTRIB__ RMH_Interface_GetMac(RMH_Handle handle, uint8_t (*response)[6]);                                         /* MAC Address of the Local Node as hex bytes */
-RMH_Result __RMH_API_ATTRIB__ RMH_Interface_SetMac(RMH_Handle handle, const uint8_t value[6]);
+RMH_Result __RMH_API_ATTRIB__ RMH_Interface_GetMac(RMH_Handle handle, RMH_MacAddress_t* response);                                     /* MAC Address of the Local Node as hex bytes */
+RMH_Result __RMH_API_ATTRIB__ RMH_Interface_SetMac(RMH_Handle handle, const RMH_MacAddress_t value);
 
-RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetLinkStatus(RMH_Handle handle, RMH_LinkStatus* status);                                    /* Current Status of the MoCA interface */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetNumNodes(RMH_Handle handle, uint32_t* response);                                          /* Number of Nodes on the MoCA Network - Cannot exceed the maximum supported by MoCA Protocol. */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetNodeId(RMH_Handle handle, RMH_NodeList_Uint32_t* response); /* Return the node ID for each node on the network. A fast way to get the node ids for all nodes INCLUDING the self node */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetRemoteNodeId(RMH_Handle handle, RMH_NodeList_Uint32_t* response);                         /* Return the node ID for each remote node on the network. A fast way to get the node ids for all nodes EXCLUDING the self node */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetAssociatedId(RMH_Handle handle, RMH_NodeList_Uint32_t* response); /* Return the Associated ID for each node on the network. A fast way to get the node ids for all nodes EXCLUDING the self node */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetNCNodeId(RMH_Handle handle, uint32_t* response);                                          /* Node ID of the Network Coordinator.*/
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetBackupNCNodeId(RMH_Handle handle, uint32_t* response);                                    /* Node ID of the Backup Network Coordinator */
-RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetNCMac(RMH_Handle handle, uint8_t (*response)[6]);                                         /* Network Coordinator MAC Address as hex bytes */
+RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetNCMac(RMH_Handle handle, RMH_MacAddress_t* response);                                     /* Network Coordinator MAC Address as hex bytes */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetLinkUptime(RMH_Handle handle, uint32_t* response);                                        /* Returns time the local node has been part of the network in seconds */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetMixedMode(RMH_Handle handle, bool *response);                                             /* Check if the MoCA interface is enabled or disabled */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetRFChannelFreq(RMH_Handle handle, uint32_t *response);                                     /* The Current Frequency on which the Node formed the Network */
@@ -92,10 +92,12 @@ RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetMoCAVersion(RMH_Handle handle, RMH_
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetTxMapPhyRate(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetTxGcdPowerReduction(RMH_Handle handle, uint32_t* response);                               /* Return the Gcd power reduction of the network */
 RMH_Result __RMH_API_ATTRIB__ RMH_Network_GetTabooMask(RMH_Handle handle, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_NetworkMesh_GetTxUnicastPhyRate(RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);                        /* Return the phy rates of all nodes in Mbps */
+RMH_Result __RMH_API_ATTRIB__ RMH_NetworkMesh_GetBitLoadingInfo(RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);
 
 RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNode_GetNodeIdFromAssociatedId(RMH_Handle handle, const uint8_t associatedId, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNode_GetAssociatedIdFromNodeId(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
-RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNode_GetMac(RMH_Handle handle, const uint8_t nodeId, uint8_t (*response)[6]);                  /* MAC Address of a given nodeId as hex bytes */
+RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNode_GetMac(RMH_Handle handle, const uint8_t nodeId, RMH_MacAddress_t* response);              /* MAC Address of a given nodeId as hex bytes */
 RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNode_GetPreferredNC(RMH_Handle handle, const uint8_t nodeId, bool* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNode_GetHighestSupportedMoCAVersion(RMH_Handle handle, const uint8_t nodeId, RMH_MoCAVersion* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNode_GetActiveMoCAVersion(RMH_Handle handle, const uint8_t nodeId, RMH_MoCAVersion* response);
@@ -120,9 +122,6 @@ RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNodeTx_GetUnicastPower(RMH_Handle handle
 RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNodeTx_GetPowerReduction(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_RemoteNodeTx_GetPackets(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
 
-RMH_Result __RMH_API_ATTRIB__ RMH_NetworkMesh_GetTxUnicastPhyRate(RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);                        /* Return the phy rates of all nodes in Mbps */
-RMH_Result __RMH_API_ATTRIB__ RMH_NetworkMesh_GetBitLoadingInfo(RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);
-
 RMH_Result __RMH_API_ATTRIB__ RMH_Power_GetMode(RMH_Handle handle, RMH_PowerMode* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Power_GetSupportedModes(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Power_GetTxPowerControlEnabled(RMH_Handle handle, bool* response);
@@ -140,7 +139,7 @@ RMH_Result __RMH_API_ATTRIB__ RMH_QAM256_SetTargetPhyRate(RMH_Handle handle, con
 RMH_Result __RMH_API_ATTRIB__ RMH_Privacy_GetEnabled(RMH_Handle handle, bool* response);                                               /* Return if the link privacy is enabled. A Password is required when Privacy is enabled */
 RMH_Result __RMH_API_ATTRIB__ RMH_Privacy_SetEnabled(RMH_Handle handle, const bool value);                                             /* Enable/disable link privacy. A Password is required when Privacy is enabled */
 RMH_Result __RMH_API_ATTRIB__ RMH_Privacy_GetPassword(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);             /* Return the privacy password */
-RMH_Result __RMH_API_ATTRIB__ RMH_Privacy_SetPassword(RMH_Handle handle, const char* valueBuf);                                        /* Set the privacy password */
+RMH_Result __RMH_API_ATTRIB__ RMH_Privacy_SetPassword(RMH_Handle handle, const char* value);                                           /* Set the privacy password */
 
 RMH_Result __RMH_API_ATTRIB__ RMH_Turbo_GetEnabled(RMH_Handle handle, bool* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Turbo_SetEnabled(RMH_Handle handle, const bool value);
@@ -148,11 +147,38 @@ RMH_Result __RMH_API_ATTRIB__ RMH_Turbo_SetEnabled(RMH_Handle handle, const bool
 RMH_Result __RMH_API_ATTRIB__ RMH_Bonding_GetEnabled(RMH_Handle handle, bool* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Bonding_SetEnabled(RMH_Handle handle, const bool value);
 
+RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_GetStartChannel(RMH_Handle handle, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_SetStartChannel(RMH_Handle handle, const uint32_t value);
+RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_GetChannelMask(RMH_Handle handle, uint32_t* response);                                            /* Frequencies that the Local Node does not support (bitmask) */
+RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_SetChannelMask(RMH_Handle handle, const uint32_t value);
+
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoS_GetNumIngressFlows(RMH_Handle handle, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_Self_GetPQOSEgressNumFlows(RMH_Handle handle, uint32_t* response); /* To be renamed RMH_PQoS_GetNumEgressFlows */
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoS_GetEgressBandwidth(RMH_Handle handle, const uint8_t nodeId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoS_GetIngressFlowIds(RMH_Handle handle, RMH_MacAddress_t* responseBuf, const size_t responseBufSize, size_t* responseBufUsed);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetPeakDataRate(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetBurstSize(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetLeaseTime(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetLeaseTimeRemaining(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetFlowTag(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetMaxLatency(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetShortTermAvgRatio(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetMaxRetry(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetVLANTag(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetFlowPer(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetIngressClassificationRule(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetPacketSize(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetTotalTxPackets(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetDSCPMoCA(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetDFID(RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetDestination(RMH_Handle handle, const RMH_MacAddress_t flowId, RMH_MacAddress_t *response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetIngressMac(RMH_Handle handle, const RMH_MacAddress_t flowId, RMH_MacAddress_t *response);
+RMH_Result __RMH_API_ATTRIB__ RMH_PQoSFlow_GetEgressMac(RMH_Handle handle, const RMH_MacAddress_t flowId, RMH_MacAddress_t *response);
+
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetAdmissionAttempts(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetAdmissionFailures(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetAdmissionSucceeded(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetAdmissionsDeniedAsNC(RMH_Handle handle, uint32_t* response);
-
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetTxTotalBytes(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetRxTotalBytes(RMH_Handle handle, uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetTxTotalPackets(RMH_Handle handle, uint32_t* response);
@@ -182,20 +208,14 @@ RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetRxTotalAggregatedPackets(RMH_Handle h
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetTxTotalAggregatedPackets(RMH_Handle handle, uint32_t* response); /* Maximum total number of aggregated packets */
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetRxPacketAggregation(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed);  /* Return Rx packet aggregation. Index 0 is packets without aggregation. Index 1 is 2 pkt aggregation.  Index 2 is 3 pkt aggregation. And so on */
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetTxPacketAggregation(RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed);  /* Return Rx packet aggregation. Index 0 is packets without aggregation. Index 1 is 2 pkt aggregation.  Index 2 is 3 pkt aggregation. And so on */
-
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetRxCorrectedErrors(RMH_Handle handle, RMH_NodeList_Uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_GetRxUncorrectedErrors(RMH_Handle handle, RMH_NodeList_Uint32_t* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Stats_Reset(RMH_Handle handle);
 
-RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_GetStartChannel(RMH_Handle handle, uint32_t* response);
-RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_SetStartChannel(RMH_Handle handle, const uint32_t value);
-RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_GetChannelMask(RMH_Handle handle, uint32_t* response);                                            /* Frequencies that the Local Node does not support (bitmask) */
-RMH_Result __RMH_API_ATTRIB__ RMH_Taboo_SetChannelMask(RMH_Handle handle, const uint32_t value);
-
 RMH_Result __RMH_API_ATTRIB__ RMH_Log_GetLevel(RMH_Handle handle, RMH_LogLevel* response);
 RMH_Result __RMH_API_ATTRIB__ RMH_Log_SetLevel(RMH_Handle handle, const RMH_LogLevel value);
-RMH_Result __RMH_API_ATTRIB__ RMH_Log_SetFilename(RMH_Handle handle, const char* value);
 RMH_Result __RMH_API_ATTRIB__ RMH_Log_GetFilename(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+RMH_Result __RMH_API_ATTRIB__ RMH_Log_SetFilename(RMH_Handle handle, const char* value);
 
 #ifdef __cplusplus
 }
