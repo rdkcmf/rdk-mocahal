@@ -16,12 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS =
-DIST_SUBDIRS =
+# Process this file with autoconf to produce a configure script.
 
-###############################################################################
-# THE LIBRARIES TO BUILD
-###############################################################################
+AC_PREREQ([2.69])
+AC_INIT([RDK-MOCA-HAL], [1.0], [Gabriel.Gooslin@broadcom.com])
 
-lib_LTLIBRARIES = librdkmocahalsoc_stubs.la
-librdkmocahalsoc_stubs_la_SOURCES = librdkmocahalsoc_stubs.c
+AC_CONFIG_MACRO_DIR([cfg])
+AC_CONFIG_AUX_DIR([cfg])
+#AC_CONFIG_HEADERS([cfg/config.h])
+AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 1.9])
+LT_INIT
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+
+# Checks for libraries.
+
+# Checks for header files.
+AC_CHECK_HEADERS([stdio.h stdlib.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+
+# Checks for library functions.
+AC_FUNC_ERROR_AT_LINE
+
+AC_CONFIG_FILES([Makefile rmh_interface/Makefile rmh_lib/Makefile rmh_app/Makefile])
+
+AC_OUTPUT

@@ -16,5 +16,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS = src/librdkmocahalsoc_stubs src/librdkmocahal src/rmh
-DIST_SUBDIRS = src/librdkmocahalsoc_stubs src/librdkmocahal src/rmh
+SUBDIRS =
+DIST_SUBDIRS =
+
+###############################################################################
+# THE LIBRARIES TO BUILD
+###############################################################################
+
+lib_LTLIBRARIES = librdkmocahal.la
+librdkmocahal_la_SOURCES = \
+    librmh.h \
+    librmh_api_no_wrap.c \
+    librmh_api_wrap_generic_only.c \
+    librmh_api_wrap_soc_and_generic.c \
+    librmh_wrap.c \
+    librmh_globals.c
+
+librdkmocahal_la_LDFLAGS= -Wl,--no-as-needed
+librdkmocahal_la_LIBADD = -ldl
+librdkmocahal_la_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface

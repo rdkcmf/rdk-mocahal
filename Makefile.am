@@ -16,13 +16,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS =
-DIST_SUBDIRS =
-
-###############################################################################
-# THE LIBRARIES TO BUILD
-###############################################################################
-
-lib_LTLIBRARIES = librdkmocahal.la
-librdkmocahal_la_SOURCES = librdkmocahal_generic.c
-librdkmocahal_la_LIBADD = -lrdkmocahalsoc $(top_builddir)/src/librdkmocahalsoc_stubs/librdkmocahalsoc_stubs.la
+SUBDIRS = rmh_interface rmh_lib rmh_app
+DIST_SUBDIRS = rmh_interface rmh_lib rmh_app
