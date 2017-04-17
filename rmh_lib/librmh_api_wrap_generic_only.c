@@ -597,7 +597,7 @@ RMH_Result GENERIC_IMPL__RMH_GetAllAPIs(const RMH_Handle handle, RMH_APIList** a
 RMH_Result GENERIC_IMPL__RMH_GetUnimplementedAPIs(const RMH_Handle handle, RMH_APIList** apiList) {
     if (hRMHGeneric_SoCUnimplementedAPIList.apiListSize == 0) {
         int i;
-        void* soclib = dlopen("librdkmocahalsoc.so", RTLD_LAZY);
+        void* soclib = dlopen("librdkmocahalsoc.so.0", RTLD_LAZY);
         for(i=0; i != hRMHGeneric_APIList.apiListSize; i++) {
             RMH_API* api=hRMHGeneric_APIList.apiList[i];
             if (api->socApiExpected) {

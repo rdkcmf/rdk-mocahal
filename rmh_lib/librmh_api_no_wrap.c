@@ -34,20 +34,19 @@ RMH_Handle RMH_Initialize(const RMH_EventCallback eventCB, void* userContext) {
     }
     handle->eventCB=eventCB;
     handle->eventCBUserContext=userContext;
-    handle->soclib = dlopen("librdkmocahalsoc.so", RTLD_LAZY);
+    handle->soclib = dlopen("librdkmocahalsoc.so.0", RTLD_LAZY);
     if (handle->soclib) {
         RMH_Handle (*apiFunc)() = dlsym(handle->soclib, "RMH_Initialize");
         if (dlerror()) return NULL;
         if (!apiFunc) return NULL;
         handle->handle = apiFunc(eventCB, userContext);
         if (!handle->handle) {
-            RMH_PrintErr("Failed to initialize the SoC MoCA Hal! Ensure all necessary drivers are installed and loaded!\n");
+            RMH_PrintErr("Failed when initializing the SoC MoCA Hal!\n");
             goto error_out;
         }
     }
     else {
-        RMH_PrintErr("Failed to open the SoC library 'librdkmocahalsoc.so'. Please ensure it's properly installe don this system\n");
-        goto error_out;
+        RMH_PrintWrn("Failed to open the SoC library 'librdkmocahalsoc.so.0', all MoCA APIs will be unimplemented!  Please ensure it's properly installe don this system\n");
     }
     RMH_PrintTrace("Initialized generic handle:0x%p socHandle:0x%p\n", handle, handle->handle);
     return (RMH_Handle)handle;
