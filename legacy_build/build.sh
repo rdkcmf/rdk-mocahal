@@ -1,3 +1,4 @@
+#!/bin/bash
 ##########################################################################
 # If not stated otherwise in this file or this component's Licenses.txt
 # file the following copyright and licenses apply:
@@ -16,17 +17,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS =
-DIST_SUBDIRS =
+#
 
-###############################################################################
-# THE LIBRARIES TO BUILD
-###############################################################################
+SCRIPT=$(readlink -f "$0")
+SCRIPTS_DIR=`dirname "$SCRIPT"`
+BUILDS_DIR=$COMBINED_ROOT
 
-# the Binary names to test build
-bin_PROGRAMS = rmh
 
-# the sources to add to the library and to add to the source distribution
-rmh_SOURCES=rmh_app.c rmh_app_api_handlers.c
-rmh_LDADD = $(top_builddir)/rmh_lib/librdkmocahal.la -ldl
-rmh_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface
+for option in $@
+do
+  echo option = $option
+  if [ "$option" = "clean" ]; then
+    cleanBuild=1
+  elif [ "$option" = "install" ]; then
+    mkdir -p $FSROOT/usr/lib
+    cp lib/*.so.* $FSROOT/usr/lib/
+  fi
+done

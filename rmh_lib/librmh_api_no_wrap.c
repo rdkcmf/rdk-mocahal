@@ -36,17 +36,24 @@ RMH_Handle RMH_Initialize(const RMH_EventCallback eventCB, void* userContext) {
     handle->eventCBUserContext=userContext;
     handle->soclib = dlopen("librdkmocahalsoc.so.0", RTLD_LAZY);
     if (handle->soclib) {
+        char *dlErr = dlerror(); /* Check error first to clear it out */
         RMH_Handle (*apiFunc)() = dlsym(handle->soclib, "RMH_Initialize");
-        if (dlerror()) return NULL;
-        if (!apiFunc) return NULL;
-        handle->handle = apiFunc(eventCB, userContext);
-        if (!handle->handle) {
-            RMH_PrintErr("Failed when initializing the SoC MoCA Hal!\n");
-            goto error_out;
+        dlErr = dlerror();
+        if (dlErr) {
+            RMH_PrintTrace("Error 'RMH_Initialize' in dlopen: '%s'. APIs will return RMH_INVALID_INTERNAL_STATE!\n", dlErr);
+        }
+        else if (!apiFunc) {
+            RMH_PrintErr("Unable to find 'RMH_Initialize' in SoC library! APIs will return RMH_INVALID_INTERNAL_STATE!\n");
+        }
+        else {
+            handle->handle = apiFunc(eventCB, userContext);
+            if (!handle->handle) {
+                RMH_PrintErr("Failed when initializing the SoC MoCA Hal! APIs will return RMH_INVALID_INTERNAL_STATE!\n");
+            }
         }
     }
     else {
-        RMH_PrintWrn("Failed to open the SoC library 'librdkmocahalsoc.so.0', all MoCA APIs will be unimplemented!  Please ensure it's properly installe don this system\n");
+        RMH_PrintWrn("Failed to open the SoC library 'librdkmocahalsoc.so.0', all MoCA APIs will return RMH_UNIMPLEMENTED!  Please ensure it's properly installed on this system\n");
     }
     RMH_PrintTrace("Initialized generic handle:0x%p socHandle:0x%p\n", handle, handle->handle);
     return (RMH_Handle)handle;

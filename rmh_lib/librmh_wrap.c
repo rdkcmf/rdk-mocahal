@@ -51,9 +51,10 @@ void pRMH_APIWRAP_PreAPIExecute(const RMH_Handle handle, const char *api, const 
 }
 
 static inline
-RMH_Result pRMH_APIWRAP_PostAPIExecute(const RMH_Handle handle, const char *api, const RMH_Result ret) {
+RMH_Result pRMH_APIWRAP_PostAPIExecute(const RMH_Handle handle, const char *api, const RMH_Result genRet, const RMH_Result socRet) {
     double elapsedTime;
     struct timeval stopTime;
+    RMH_Result ret = (socRet == RMH_SUCCESS) ? genRet : socRet;
     gettimeofday(&stopTime, NULL);
     elapsedTime = (stopTime.tv_sec - handle->startTime.tv_sec) * 1000.0; /* sec to ms */
     elapsedTime += (stopTime.tv_usec - handle->startTime.tv_usec) / 1000.0; /* us to ms */
@@ -63,21 +64,29 @@ RMH_Result pRMH_APIWRAP_PostAPIExecute(const RMH_Handle handle, const char *api,
 }
 
 static inline
-void* pRMH_APIWRAP_GetSoCAPI(const RMH_Handle handle, const char *apiName) {
-    void* apiFunc=NULL;
+RMH_Result pRMH_APIWRAP_GetSoCAPI(const RMH_Handle handle, const char *apiName, RMH_Result (**apiFunc)()) {
+    RMH_Result ret=RMH_UNIMPLEMENTED;
     if (handle->soclib) {
-        apiFunc=dlsym(handle->soclib, apiName);
-        if (dlerror()) {
-            RMH_PrintTrace("Error searching for API '%s'\n", apiName);
+        char *dlErr = dlerror(); /* Check error first to clear it out */
+        *apiFunc=dlsym(handle->soclib, apiName);
+        dlErr = dlerror();
+        if (dlErr) {
+            RMH_PrintTrace("Error for '%s' in dlopen: '%s'\n", apiName, dlErr);
         }
-        else if (!apiFunc) {
-            RMH_PrintTrace("Unable to find SoC implementation of '%s'\n", apiName);
+        else if (*apiFunc) {
+            RMH_PrintTrace("Located SoC API '%s' at 0x%p\n", apiName, *apiFunc);
+            if (handle->handle) {
+                ret = RMH_SUCCESS;
+            } else {
+                RMH_PrintTrace("Located SoC API '%s' at 0x%p but SoC library is not initialized!\n", apiName, *apiFunc);
+                ret = RMH_INVALID_INTERNAL_STATE;
+            }
         }
         else {
-            RMH_PrintTrace("Located SoC API '%s' at 0x%p\n", apiName, apiFunc);
+            RMH_PrintTrace("Unable to find SoC implementation of '%s'\n", apiName);
         }
     }
-    return apiFunc;
+    return ret;
 }
 
 static inline

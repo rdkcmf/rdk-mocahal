@@ -287,9 +287,9 @@ RMH_Result RMHApp__OUT_INT32(RMHApp *app, RMH_Result (*api)(const RMH_Handle han
 }
 
 static
-RMH_Result RMHApp__OUT_UINT32_ARRAY(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, uint32_t* responseBufUsed)) {
+RMH_Result RMHApp__OUT_UINT32_ARRAY(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, uint32_t* responseBuf, const size_t responseBufSize, size_t* responseBufUsed)) {
     uint32_t responseBuf[256];
-    uint32_t responseBufUsed;
+    size_t responseBufUsed;
     int i;
 
     RMH_Result ret = api(app->rmh, responseBuf, sizeof(responseBuf)/sizeof(responseBuf[0]), &responseBufUsed);
@@ -304,7 +304,7 @@ RMH_Result RMHApp__OUT_UINT32_ARRAY(RMHApp *app, RMH_Result (*api)(const RMH_Han
 static
 RMH_Result RMHApp__OUT_MAC_ARRAY(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, RMH_MacAddress_t* responseBuf, const size_t responseBufSize, size_t* responseBufUsed)) {
     RMH_MacAddress_t responseBuf[32];
-    uint32_t responseBufUsed;
+    size_t responseBufUsed;
     char macStr[24];
     int i;
 

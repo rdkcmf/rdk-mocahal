@@ -106,23 +106,24 @@ This macro "wraps" an API. It will:
     RMH_Result GENERIC_IMPL__##API_NAME (__EXE_NUM_PARAMS_X(__COMMAND_MAKE_TYPE_LIST, __GET_ARGS(PARAMS_LIST))); \
     RMH_Result SoC_IMPL__##API_NAME (__EXE_NUM_PARAMS_X(__COMMAND_MAKE_TYPE_LIST, __GET_ARGS(PARAMS_LIST))); \
     DECLARATION { \
-        RMH_Result ret = RMH_SUCCESS; \
+        RMH_Result socRet = RMH_SUCCESS; \
+        RMH_Result genRet = RMH_SUCCESS; \
         RMH_Result (*socAPI)() = NULL; \
         while(0) { API_NAME( __EXE_NUM_PARAMS_X(__COMMAND_MAKE_VARIABLE_LIST, __GET_ARGS(PARAMS_LIST)) ); } \
         pRMH_APIWRAP_PreAPIExecute(handle, #API_NAME, SOC_ENABLED, SOC_BEFORE_GENERIC); \
         if (SOC_ENABLED) { \
-            socAPI = pRMH_APIWRAP_GetSoCAPI(handle, "SoC_IMPL__"#API_NAME); \
+            socRet = pRMH_APIWRAP_GetSoCAPI(handle, "SoC_IMPL__"#API_NAME, &socAPI); \
         } \
-        if (ret == RMH_SUCCESS && SOC_ENABLED && SOC_BEFORE_GENERIC) { \
-            ret = (socAPI) ? socAPI(handle-> __EXE_NUM_PARAMS_X(__COMMAND_MAKE_VARIABLE_LIST, __GET_ARGS(PARAMS_LIST))) : RMH_UNIMPLEMENTED; \
+        if (socRet == RMH_SUCCESS && SOC_ENABLED && SOC_BEFORE_GENERIC) { \
+            socRet = socAPI(handle-> __EXE_NUM_PARAMS_X(__COMMAND_MAKE_VARIABLE_LIST, __GET_ARGS(PARAMS_LIST))); \
         } \
-        if (GENERIC_ENABLED && ret == RMH_SUCCESS) { \
-            ret = (!SOC_ENABLED || socAPI) ? GENERIC_IMPL__##API_NAME(__EXE_NUM_PARAMS_X(__COMMAND_MAKE_VARIABLE_LIST, __GET_ARGS(PARAMS_LIST))) : RMH_UNIMPLEMENTED; \
+        if (GENERIC_ENABLED && (!SOC_BEFORE_GENERIC || (SOC_BEFORE_GENERIC && socRet == RMH_SUCCESS))) { \
+            genRet = (!SOC_ENABLED || socAPI) ? GENERIC_IMPL__##API_NAME(__EXE_NUM_PARAMS_X(__COMMAND_MAKE_VARIABLE_LIST, __GET_ARGS(PARAMS_LIST))) : RMH_UNIMPLEMENTED; \
         } \
-        if (ret == RMH_SUCCESS && SOC_ENABLED && !SOC_BEFORE_GENERIC) { \
-            ret = (socAPI) ? socAPI(handle-> __EXE_NUM_PARAMS_X(__COMMAND_MAKE_VARIABLE_LIST, __GET_ARGS(PARAMS_LIST))) : RMH_UNIMPLEMENTED; \
+        if (socRet == RMH_SUCCESS && SOC_ENABLED && !SOC_BEFORE_GENERIC && genRet == RMH_SUCCESS) { \
+            socRet = socAPI(handle-> __EXE_NUM_PARAMS_X(__COMMAND_MAKE_VARIABLE_LIST, __GET_ARGS(PARAMS_LIST))); \
         } \
-        return pRMH_APIWRAP_PostAPIExecute(handle, #API_NAME, ret); \
+        return pRMH_APIWRAP_PostAPIExecute(handle, #API_NAME, genRet, socRet); \
     } \
     __RMH_REGISTER_API(DECLARATION, API_NAME, DESCRIPTION_STR, PARAMS_LIST, TAGS_STR, GENERIC_ENABLED, SOC_ENABLED, SOC_BEFORE_GENERIC, SoC_IMPL__##API_NAME, GENERIC_IMPL__##API_NAME);
 
