@@ -89,7 +89,6 @@ RMH_Result RMHApp_Stop(const RMHApp *app) {
 /***********************************************************
  * Input Fuctions
  ***********************************************************/
-inline
 const char * RMHApp_ReadNextArg(RMHApp *app) {
     const char *str=NULL;
     if (app->argc >= 1) {
