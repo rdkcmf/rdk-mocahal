@@ -37,7 +37,7 @@ AC_PROG_CC
 AC_CHECK_HEADERS([stdio.h stdlib.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_CHECK_HEADER_STDBOOL
+#AC_CHECK_HEADER_STDBOOL
 
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
