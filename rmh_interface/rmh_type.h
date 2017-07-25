@@ -56,9 +56,10 @@ typedef enum RMH_Result { ENUM_RMH_Result } RMH_Result;
 typedef enum RMH_PowerMode { ENUM_RMH_PowerMode } RMH_PowerMode;
 
 #define ENUM_RMH_LinkStatus \
-    AS(RMH_LINK_STATUS_DOWN,           0) \
-    AS(RMH_LINK_STATUS_INTERFACE_DOWN, 1) \
-    AS(RMH_LINK_STATUS_UP,             2)
+    AS(RMH_LINK_STATUS_DISABLED,        0) \
+    AS(RMH_LINK_STATUS_NO_LINK,         1) \
+    AS(RMH_LINK_STATUS_INTERFACE_DOWN,  2) \
+    AS(RMH_LINK_STATUS_UP,              3)
 typedef enum RMH_LinkStatus { ENUM_RMH_LinkStatus } RMH_LinkStatus;
 
 #define ENUM_RMH_MoCAVersion \

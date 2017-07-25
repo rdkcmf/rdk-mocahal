@@ -346,17 +346,31 @@ RMH_Result GENERIC_IMPL__RMH_Interface_SetEnabled(const RMH_Handle handle, const
 
 RMH_Result GENERIC_IMPL__RMH_Self_GetLinkStatus(const RMH_Handle handle, RMH_LinkStatus* response) {
     bool linkUp;
+    bool selfEnabled;
+    bool ifEnabled;
 
     BRMH_RETURN_IF(handle==NULL, RMH_INVALID_PARAM);
     BRMH_RETURN_IF(response==NULL, RMH_INVALID_PARAM);
-    if (RMH_Self_GetMoCALinkUp(handle, &linkUp) == RMH_SUCCESS && linkUp) {
-        bool enabled;
-        BRMH_RETURN_IF_FAILED(RMH_Interface_GetEnabled(handle, &enabled));
-        *response = enabled ? RMH_LINK_STATUS_UP : RMH_LINK_STATUS_INTERFACE_DOWN;
+
+    BRMH_RETURN_IF_FAILED(RMH_Self_GetEnabled(handle, &selfEnabled));
+    if (!selfEnabled) {
+        *response=RMH_LINK_STATUS_DISABLED;
+        return RMH_SUCCESS;
     }
-    else {
-        *response = RMH_LINK_STATUS_DOWN;
+
+    BRMH_RETURN_IF_FAILED(RMH_Self_GetMoCALinkUp(handle, &linkUp));
+    if (!linkUp) {
+        *response=RMH_LINK_STATUS_NO_LINK;
+        return RMH_SUCCESS;
     }
+
+    BRMH_RETURN_IF_FAILED(RMH_Interface_GetEnabled(handle, &ifEnabled));
+    if (!ifEnabled) {
+        *response=RMH_LINK_STATUS_INTERFACE_DOWN;
+        return RMH_SUCCESS;
+    }
+
+    *response=RMH_LINK_STATUS_UP;
     return RMH_SUCCESS;
 }
 
