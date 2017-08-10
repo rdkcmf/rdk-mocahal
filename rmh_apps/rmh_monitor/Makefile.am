@@ -16,14 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-SUBDIRS = \
-    rmh_interface \
-    rmh_lib \
-    rmh_apps/rmh \
-    rmh_apps/rmh_monitor
+SUBDIRS =
+DIST_SUBDIRS =
 
-DIST_SUBDIRS = \
-    rmh_interface \
-    rmh_lib \
-    rmh_apps/rmh \
-    rmh_apps/rmh_monitor
+###############################################################################
+# THE LIBRARIES TO BUILD
+###############################################################################
+
+# the Binary names to test build
+bin_PROGRAMS = rmh_monitor
+
+# the sources to add to the library and to add to the source distribution
+rmh_monitor_SOURCES=rmh_monitor.c rmh_monitor_events.c rmh_monitor_util.c rmh_monitor_print.c
+rmh_monitor_LDADD = $(top_builddir)/rmh_lib/librdkmocahal.la -ldl -lpthread
+rmh_monitor_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface

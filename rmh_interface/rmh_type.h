@@ -62,6 +62,15 @@ typedef enum RMH_PowerMode { ENUM_RMH_PowerMode } RMH_PowerMode;
     AS(RMH_LINK_STATUS_UP,              3)
 typedef enum RMH_LinkStatus { ENUM_RMH_LinkStatus } RMH_LinkStatus;
 
+#define ENUM_RMH_AdmissionStatus \
+    AS(RMH_ADMISSION_STATUS_UNKNOWN,            0) \
+    AS(RMH_ADMISSION_STATUS_STARTED,            1) \
+    AS(RMH_ADMISSION_STATUS_SUCCEEDED,          2) \
+    AS(RMH_ADMISSION_STATUS_FAILED,             3) \
+    AS(RMH_ADMISSION_STATUS_CHANNEL_UNUSABLE,   4) \
+    AS(RMH_ADMISSION_STATUS_TIMEOUT,            5)
+typedef enum RMH_AdmissionStatus { ENUM_RMH_AdmissionStatus } RMH_AdmissionStatus;
+
 #define ENUM_RMH_MoCAVersion \
     AS(RMH_MOCA_VERSION_UNKNOWN,            0) \
     AS(RMH_MOCA_VERSION_10,                 0x10) \
@@ -84,8 +93,12 @@ typedef enum RMH_LogLevel { ENUM_RMH_LogLevel } RMH_LogLevel;
     AS(RMH_EVENT_LINK_STATUS_CHANGED,           1u << 0) \
     AS(RMH_EVENT_MOCA_VERSION_CHANGED,          1u << 1) \
     AS(RMH_EVENT_LOW_BANDWIDTH,                 1u << 2) \
-    AS(RMH_EVENT_API_PRINT,                     1u << 3) \
-    AS(RMH_EVENT_DRIVER_PRINT,                  1u << 4)
+    AS(RMH_EVENT_NODE_JOINED,                   1u << 4) \
+    AS(RMH_EVENT_NODE_DROPPED,                  1u << 5) \
+    AS(RMH_EVENT_ADMISSION_STATUS_CHANGED,      1u << 6) \
+    AS(RMH_EVENT_NC_ID_CHANGED,                 1u << 7) \
+    AS(RMH_EVENT_API_PRINT,                     1u << 8) \
+    AS(RMH_EVENT_DRIVER_PRINT,                  1u << 9)
 typedef enum RMH_Event { ENUM_RMH_Event } RMH_Event;
 
 typedef struct RMH_EventData {
@@ -94,10 +107,23 @@ typedef struct RMH_EventData {
             RMH_LinkStatus status;
         } RMH_EVENT_LINK_STATUS_CHANGED;
         struct {
+            RMH_AdmissionStatus status;
+        } RMH_EVENT_ADMISSION_STATUS_CHANGED;
+        struct {
             RMH_MoCAVersion version;
         } RMH_EVENT_MOCA_VERSION_CHANGED;
         struct {
         } RMH_EVENT_LOW_BANDWIDTH;
+        struct {
+            bool ncValid;
+            uint32_t ncNodeId;
+        } RMH_EVENT_NC_ID_CHANGED;
+        struct {
+            uint32_t nodeId;
+        } RMH_EVENT_NODE_JOINED;
+        struct {
+            uint32_t nodeId;
+        } RMH_EVENT_NODE_DROPPED;
         struct {
             RMH_LogLevel logLevel;
             const char *logMsg;

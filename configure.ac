@@ -42,6 +42,6 @@ AC_CHECK_HEADERS([stdio.h stdlib.h unistd.h])
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
 
-AC_CONFIG_FILES([Makefile rmh_interface/Makefile rmh_lib/Makefile rmh_app/Makefile])
+AC_CONFIG_FILES([Makefile rmh_interface/Makefile rmh_lib/Makefile rmh_apps/rmh/Makefile rmh_apps/rmh_monitor/Makefile])
 
 AC_OUTPUT

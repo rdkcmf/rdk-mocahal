@@ -404,40 +404,11 @@ RMH_Result GENERIC_IMPL__RMH_Self_GetLinkStatus(const RMH_Handle handle, RMH_Lin
 #define PRINT_STATUS_MAC_FLOW(api, mac)     PRINT_STATUS_MACRO(api, RMH_MacAddress_t response;char macStr[24],  api(handle, mac, &response),                    "%s", RMH_MacToString(response, macStr, sizeof(macStr)));
 #define PRINT_STATUS_UINT32_FLOW(api, mac)  PRINT_STATUS_MACRO(api, uint32_t response,                          api(handle, mac, &response),                    "%u", response);
 
-#define PRINT_STATUS_NODE_MESH(api) _PRINT_STATUS_NODE_MESH(handle, #api, api)
-static RMH_Result _PRINT_STATUS_NODE_MESH(const RMH_Handle handle, const char *apiName, RMH_Result (*api)(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response)) {
-    RMH_NodeMesh_Uint32_t response;
-    RMH_Result ret;
-    int i, j;
-
-    RMH_PrintMsg("\n");
-    RMH_PrintMsg("- %s ---------\n", apiName);
-    ret = api(handle, &response);
-    if (ret == RMH_SUCCESS) {
-        for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
-            if (response.nodePresent[i]) {
-                RMH_NodeList_Uint32_t *nl = &response.nodeValue[i];
-                RMH_PrintMsg("    Node %02u:\n", i);
-                for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
-                    if (i != j && response.nodePresent[j]) {
-                        RMH_PrintMsg("        Node %02u: %u\n", j, nl->nodeValue[j]);
-                    }
-                }
-                RMH_PrintMsg("    \n");
-            }
-        }
-    }
-    else {
-        RMH_PrintMsg("    %s\n", RMH_ResultToString(ret));
-    }
-    return RMH_SUCCESS;
-}
-
-
 RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char* filename) {
     RMH_Result ret;
     bool enabled;
-    int i;
+    int i,j;
+    RMH_NodeMesh_Uint32_t mesh;
 
     if (filename) {
         handle->localLogToFile=fopen(filename, "a");
@@ -447,7 +418,13 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
         }
     }
 
-    RMH_PrintMsg("= RMH Local Device Status =================================================================================\n");
+    ret=RMH_Self_GetEnabled(handle, &enabled);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed calling RMH_Self_GetEnabled! Ensure the MoCA driver is properly loaded\n");
+        return ret;
+    }
+
+    RMH_PrintMsg("= RMH Local Device Status ======\n");
     PRINT_STATUS_BOOL(RMH_Self_GetEnabled);
     PRINT_STATUS_STRING(RMH_Interface_GetName);
     PRINT_STATUS_MAC(RMH_Interface_GetMac);
@@ -468,18 +445,16 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
     PRINT_STATUS_STRING(RMH_Self_GetPrivacyPassword);
     PRINT_STATUS_LOG_LEVEL(RMH_Log_GetDriverLevel);
     PRINT_STATUS_STRING(RMH_Log_GetDriverFilename);
+    PRINT_STATUS_PowerMode(RMH_Power_GetMode);
 
-    ret=RMH_Self_GetEnabled(handle, &enabled);
-    if (ret == RMH_SUCCESS && enabled) {
+    if (enabled) {
         RMH_LinkStatus linkStatus;
         RMH_NodeList_Uint32_t nodes;
 
-        PRINT_STATUS_PowerMode(RMH_Power_GetMode);
-        RMH_PrintMsg("\n");
-        RMH_PrintMsg("= RMH Network Status ===================================================================================\n");
-        PRINT_STATUS_LinkStatus(RMH_Self_GetLinkStatus);
         ret=RMH_Self_GetLinkStatus(handle, &linkStatus);
         if (ret == RMH_SUCCESS && linkStatus == RMH_LINK_STATUS_UP) {
+            RMH_PrintMsg("\n= Network Status ======\n");
+            PRINT_STATUS_LinkStatus(RMH_Self_GetLinkStatus);
             PRINT_STATUS_UINT32(RMH_Network_GetNumNodes);
             PRINT_STATUS_UINT32(RMH_Network_GetNodeId);
             PRINT_STATUS_UINT32(RMH_Network_GetNCNodeId);
@@ -499,8 +474,7 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
             if (ret == RMH_SUCCESS) {
                 for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
                     if (nodes.nodePresent[i]) {
-                        RMH_PrintMsg("\n");
-                        RMH_PrintMsg("= RMH Remote Node ID %02u =======\n", i);
+                        RMH_PrintMsg("\n= Remote Node ID %02u =======\n", i);
                         PRINT_STATUS_MAC_RN(RMH_RemoteNode_GetMac, i);
                         PRINT_STATUS_MoCAVersion_RN(RMH_RemoteNode_GetHighestSupportedMoCAVersion, i);
                         PRINT_STATUS_BOOL_RN(RMH_RemoteNode_GetPreferredNC, i);
@@ -515,16 +489,49 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
                     }
                 }
             }
-            PRINT_STATUS_NODE_MESH(RMH_Network_GetTxUnicastPhyRate);
+
+            RMH_PrintMsg("\n= PHY Rates =========\n");
+            ret = RMH_Network_GetTxUnicastPhyRate(handle, &mesh);
+            if (ret == RMH_SUCCESS) {
+                char phyStrBegin[256];
+                char *phyStrEnd=phyStrBegin+sizeof(phyStrBegin);
+                char *phyStr=phyStrBegin;
+
+                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "   ");
+                for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
+                    if (mesh.nodePresent[i]) {
+                        phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "  %02u ", i);
+                    }
+                }
+                RMH_PrintMsg("%s\n", phyStrBegin);
+
+                for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
+                    if (mesh.nodePresent[i]) {
+                        char *phyStr=phyStrBegin;
+                        RMH_NodeList_Uint32_t *nl = &mesh.nodeValue[i];
+                        phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "%02u: ", i);
+                        for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
+                            if (i == j) {
+                                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, " --  ");
+                            } else if (mesh.nodePresent[j]) {
+                                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "%04u ", nl->nodeValue[j]);
+                            }
+                        }
+                        RMH_PrintMsg("%s\n", phyStrBegin);
+                    }
+                }
+            }
+            else {
+                RMH_PrintMsg("%s\n", RMH_ResultToString(ret));
+            }
+        }
+        else {
+            RMH_PrintMsg("*** MoCA link is down! ***\n");
         }
     }
     else {
-        RMH_PrintMsg("\n");
-        RMH_PrintMsg("\n");
-        RMH_PrintWrn("*** MoCA not connected! ***\n");
+        RMH_PrintMsg("*** MoCA not enabled! You may need to run 'rmh start' ***\n");
     }
-    RMH_PrintMsg("============================================================================================================\n");
-    RMH_PrintMsg("\n");
 
     if (handle->localLogToFile) {
         fclose(handle->localLogToFile);
@@ -533,12 +540,76 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
     return RMH_SUCCESS;
 }
 
+
+RMH_Result GENERIC_IMPL__RMH_Log_PrintStats(const RMH_Handle handle, const char* filename) {
+    RMH_Result ret;
+    RMH_LinkStatus linkStatus;
+
+    if (filename) {
+        handle->localLogToFile=fopen(filename, "a");
+        if (handle->localLogToFile == NULL) {
+            RMH_PrintErr("Failed to open '%s' for writing!\n", filename);
+            return RMH_FAILURE;
+        }
+    }
+
+    ret=RMH_Self_GetLinkStatus(handle, &linkStatus);
+    if (ret == RMH_SUCCESS && linkStatus == RMH_LINK_STATUS_UP) {
+        RMH_PrintMsg("= Tx Stats ======\n");
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxTotalPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxUnicastPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxBroadcastPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxMulticastPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxReservationRequestPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxMapPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxLinkControlPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxBeacons);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxDroppedPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxTotalErrors);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxTotalAggregatedPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetTxTotalBytes);
+
+        RMH_PrintMsg("\n= Rx Stats ======\n");
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxUnicastPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxBroadcastPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxMulticastPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxReservationRequestPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxMapPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxLinkControlPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxBeacons);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxUnknownProtocolPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxDroppedPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalErrors);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxCRCErrors);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxTimeoutErrors);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalAggregatedPackets);
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalBytes);
+    }
+    else {
+            RMH_PrintMsg("*** Stats not available while MoCA link is down ***\n");
+    }
+
+/*RMH_Stats_GetRxPacketAggregation (const RMH_Handle handle, uint32_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+RMH_Stats_GetTxPacketAggregation (const RMH_Handle handle, uint32_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+RMH_Stats_GetRxCorrectedErrors (const RMH_Handle handle, RMH_NodeList_Uint32_t* response);
+RMH_Stats_GetRxUncorrectedErrors (const RMH_Handle handle, RMH_NodeList_Uint32_t* response);*/
+
+    if (handle->localLogToFile) {
+        fclose(handle->localLogToFile);
+        handle->localLogToFile=NULL;
+    }
+    return RMH_SUCCESS;
+}
+
+
 RMH_Result GENERIC_IMPL__RMH_Log_PrintFlows(const RMH_Handle handle, const char* filename) {
     RMH_Result ret;
     RMH_MacAddress_t flowIds[64];
     size_t numFlowIds;
     char macStr[24];
     uint32_t leaseTime;
+    RMH_LinkStatus linkStatus;
     int i;
 
     if (filename) {
@@ -549,52 +620,52 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintFlows(const RMH_Handle handle, const char*
         }
     }
 
-    RMH_PrintMsg("= RMH Local Flows =================================================================================\n");
-    PRINT_STATUS_UINT32(RMH_PQoS_GetNumEgressFlows);
-    PRINT_STATUS_UINT32(RMH_PQoS_GetNumIngressFlows);
-    ret = RMH_PQoS_GetIngressFlowIds(handle, flowIds, sizeof(flowIds)/sizeof(flowIds[0]), &numFlowIds);
-    if (ret != RMH_SUCCESS) {
-        RMH_PrintWrn("*** Unable to get flow information! RMH_PQoS_GetIngressFlowIds returned %s ***\n", RMH_ResultToString(ret));
-    }
-    else if (numFlowIds != 0) {
-        for (i=0; i < numFlowIds; i++) {
-            RMH_PrintMsg("\n");
-            RMH_PrintMsg("= RMH Flow %u =======\n", i);
-            RMH_PrintMsg("%-50s: %s\n", "Flow Id", RMH_MacToString(flowIds[i], macStr, sizeof(macStr)/sizeof(macStr[0])));
-            PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetIngressMac, flowIds[i]);
-            PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetEgressMac, flowIds[i]);
-            PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetDestination, flowIds[i]);
-            ret = RMH_PQoSFlow_GetLeaseTime(handle, flowIds[i], &leaseTime);
-            if (ret != RMH_SUCCESS) {
-                RMH_PrintWrn("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", RMH_ResultToString(ret));
-            }
-            else {
-                if (leaseTime) {
-                    RMH_PrintMsg("%-50s: %u\n", "RMH_PQoSFlow_GetLeaseTime", leaseTime);
-                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetLeaseTimeRemaining, flowIds[i]);
+    ret=RMH_Self_GetLinkStatus(handle, &linkStatus);
+    if (ret == RMH_SUCCESS && linkStatus == RMH_LINK_STATUS_UP) {
+        RMH_PrintMsg("= Local Flows ======\n");
+        PRINT_STATUS_UINT32(RMH_PQoS_GetNumEgressFlows);
+        PRINT_STATUS_UINT32(RMH_PQoS_GetNumIngressFlows);
+        ret = RMH_PQoS_GetIngressFlowIds(handle, flowIds, sizeof(flowIds)/sizeof(flowIds[0]), &numFlowIds);
+        if ((ret == RMH_SUCCESS) && (numFlowIds != 0)) {
+            for (i=0; i < numFlowIds; i++) {
+                RMH_PrintMsg("= Flow %u =======\n", i);
+                RMH_PrintMsg("%-50s: %s\n", "Flow Id", RMH_MacToString(flowIds[i], macStr, sizeof(macStr)/sizeof(macStr[0])));
+                PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetIngressMac, flowIds[i]);
+                PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetEgressMac, flowIds[i]);
+                PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetDestination, flowIds[i]);
+                ret = RMH_PQoSFlow_GetLeaseTime(handle, flowIds[i], &leaseTime);
+                if (ret != RMH_SUCCESS) {
+                    RMH_PrintWrn("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", RMH_ResultToString(ret));
                 }
                 else {
-                    RMH_PrintMsg("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", "INFINITE");
+                    if (leaseTime) {
+                        RMH_PrintMsg("%-50s: %u\n", "RMH_PQoSFlow_GetLeaseTime", leaseTime);
+                        PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetLeaseTimeRemaining, flowIds[i]);
+                    }
+                    else {
+                        RMH_PrintMsg("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", "INFINITE");
+                    }
                 }
-            }
 
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPeakDataRate, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetBurstSize, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowTag, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPacketSize, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxLatency, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetShortTermAvgRatio, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxRetry, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowPer, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetIngressClassificationRule, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetVLANTag, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetTotalTxPackets, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDSCPMoCA, flowIds[i]);
-            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDFID, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPeakDataRate, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetBurstSize, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowTag, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPacketSize, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxLatency, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetShortTermAvgRatio, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxRetry, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowPer, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetIngressClassificationRule, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetVLANTag, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetTotalTxPackets, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDSCPMoCA, flowIds[i]);
+                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDFID, flowIds[i]);
+            }
         }
     }
-    RMH_PrintMsg("============================================================================================================\n");
-    RMH_PrintMsg("\n");
+    else {
+            RMH_PrintMsg("*** Flow information not available while MoCA link is down ***\n");
+    }
 
     if (handle->localLogToFile) {
         fclose(handle->localLogToFile);

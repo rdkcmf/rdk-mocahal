@@ -68,6 +68,7 @@ error_out:
 #define AS(x,y) #x,
 __attribute__((visibility("hidden"))) const char * const RMH_ResultStr[] = { ENUM_RMH_Result };
 __attribute__((visibility("hidden"))) const char * const RMH_LinkStatusStr[] = { ENUM_RMH_LinkStatus };
+__attribute__((visibility("hidden"))) const char * const RMH_AdmissionStatusStr[] = { ENUM_RMH_AdmissionStatus };
 __attribute__((visibility("hidden"))) const char * const RMH_PowerModeStr[] = { ENUM_RMH_PowerMode };
 __attribute__((visibility("hidden"))) const char * const RMH_MoCAVersionStr[] = { ENUM_RMH_MoCAVersion };
 __attribute__((visibility("hidden"))) const char * const RMH_LogLevelStr[] = { ENUM_RMH_LogLevel };
@@ -79,6 +80,10 @@ const char* const RMH_ResultToString(const RMH_Result value) {
 
 const char* const RMH_LinkStatusToString(const RMH_LinkStatus value) {
     return RMH_LinkStatusStr[value];
+}
+
+const char* const RMH_AdmissionStatusToString(const RMH_AdmissionStatus value) {
+    return RMH_AdmissionStatusStr[value];
 }
 
 const char* const RMH_MoCAVersionToString(const RMH_MoCAVersion value) {

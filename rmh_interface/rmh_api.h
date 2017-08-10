@@ -258,6 +258,32 @@ FALSE,
 RMH_API_IMPLEMENTATION_GENERIC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+const char* const RMH_AdmissionStatusToString(const RMH_AdmissionStatus value),
+
+/* API Name */
+RMH_AdmissionStatusToString,
+
+/* Description */
+"Convert <RMH_AdmissionStatus> to a string",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(value,            const RMH_AdmissionStatus,        "Value to be printed as a string")
+),
+
+/* Wrap API */
+FALSE,
+
+/* Tags */
+"Core"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 const char* const RMH_MoCAVersionToString(const RMH_MoCAVersion value),
 
 /* API Name */
@@ -4950,6 +4976,36 @@ TRUE,
 RMH_API_IMPLEMENTATION_GENERIC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+RMH_Result RMH_Log_PrintStats(const RMH_Handle handle, const char* filename),
+
+/* API Name */
+RMH_Log_PrintStats,
+
+/* Description */
+"Print a summary of of the Tx/Rx MoCA stats. If <filename> is NULL all log messages are printed "
+"with RMH_LOG_MESSAGE. If it is not NULL the status will be appended to that file",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,
+        "The RMH handle as returned by RMH_Initialize. NULL is valid for this API."),
+    INPUT_PARAM(filename,       const char *,
+        "The file name where to write the status. If this is NULL the status will be written to RMH_LOG_MESSAGE")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Stats,Status"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 RMH_Result RMH_Log_PrintFlows(const RMH_Handle handle, const char* filename),
 
 /* API Name */
@@ -4971,7 +5027,7 @@ PARAMETERS(
 TRUE,
 
 /* Tags */
-"Status"
+"PQoS,Status"
 /********************************************************************************************************************/
 )
 
