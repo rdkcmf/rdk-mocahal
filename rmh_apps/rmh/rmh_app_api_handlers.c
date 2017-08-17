@@ -565,24 +565,42 @@ RMH_Result RMHApp__OUT_UINT32_NODELIST(RMHApp *app, RMH_Result (*api)(const RMH_
 static
 RMH_Result RMHApp__OUT_UINT32_NODEMESH(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response)) {
     RMH_NodeMesh_Uint32_t response;
+    int i,j;
 
     RMH_Result ret = api(app->rmh, &response);
     if (ret == RMH_SUCCESS) {
-        int i, j;
+        char phyStrBegin[256];
+        char *phyStrEnd=phyStrBegin+sizeof(phyStrBegin);
+        char *phyStr=phyStrBegin;
+
+        phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "   ");
+        for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
+            if (response.nodePresent[i]) {
+                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "  %02u ", i);
+            }
+        }
+        RMH_PrintMsg("%s\n", phyStrBegin);
 
         for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
             if (response.nodePresent[i]) {
+                char *phyStr=phyStrBegin;
                 RMH_NodeList_Uint32_t *nl = &response.nodeValue[i];
-                RMH_PrintMsg("NodeId:%u\n", i);
+                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "%02u: ", i);
                 for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
-                    if (i!=j && response.nodePresent[j]) {
-                        RMH_PrintMsg("   %u: %u\n", j, nl->nodeValue[j]);
+                    if (i == j) {
+                        phyStr+=snprintf(phyStr, phyStrEnd-phyStr, " --  ");
+                    } else if (response.nodePresent[j]) {
+                        phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "%04u ", nl->nodeValue[j]);
                     }
                 }
-            RMH_PrintMsg("\n");
+                RMH_PrintMsg("%s\n", phyStrBegin);
             }
         }
     }
+    else {
+        RMH_PrintMsg("%s\n", RMH_ResultToString(ret));
+    }
+
     return ret;
 }
 
@@ -885,6 +903,8 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetTxBroadcastPhyRate,                      "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetTxGcdPowerReduction,                     "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetTxUnicastPhyRate,                        "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetTxVLPER,                                 "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetTxNPER,                                  "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetBitLoadingInfo,                          "");
     SET_API_HANDLER(RMHApp__GET_TABOO,                          RMH_Network_GetTabooChannels,                           "");
 

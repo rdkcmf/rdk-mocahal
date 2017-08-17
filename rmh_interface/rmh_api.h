@@ -2382,6 +2382,66 @@ TRUE,
 RMH_API_IMPLEMENTATION_SOC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+RMH_Result RMH_Network_GetTxVLPER(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response),
+
+/* API Name */
+RMH_Network_GetTxVLPER,
+
+/* Description */
+"Return the transmit VLPER (Very Low Packet Error Rate) PHY rates *between* all MoCA 2.0 nodes on the network. The "
+"resulting matrix will be in <RMH_NodeMesh_Uint32_t>. Where the index is the node Id, if <nodePresent> is 'true', "
+"then <nodeValue> is a list of the unicast PHY rates from this node Id to every other node on the network. Note, "
+"MoCA 1.1 nodes will have <nodePresent> set to 'true', however they <nodeValue> will be 0.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      RMH_NodeMesh_Uint32_t*, "The PHY rate mesh table")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Network,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Network_GetTxNPER(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response),
+
+/* API Name */
+RMH_Network_GetTxNPER,
+
+/* Description */
+"Return the transmit NPER (Nominal Packet Error Rate) PHY rates *from* all MoCA 2.0 nodes on the network. The "
+"resulting matrix will be in <RMH_NodeMesh_Uint32_t>. Where the index is the node Id, if <nodePresent> is 'true', "
+"then <nodeValue> is a list of the unicast PHY rates from this node Id to every other node on the network. Note, "
+"MoCA 1.1 nodes will have <nodePresent> set to 'true', however they <nodeValue> will be 0.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      RMH_NodeMesh_Uint32_t*, "The PHY rate mesh table")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Network,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 RMH_Result RMH_Network_GetBitLoadingInfo(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response),
 
 /* API Name */
