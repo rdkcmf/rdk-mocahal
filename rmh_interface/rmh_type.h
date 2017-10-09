@@ -101,6 +101,17 @@ typedef enum RMH_LogLevel { ENUM_RMH_LogLevel } RMH_LogLevel;
     AS(RMH_EVENT_DRIVER_PRINT,                  1u << 9)
 typedef enum RMH_Event { ENUM_RMH_Event } RMH_Event;
 
+#define ENUM_RMH_Band \
+    AS(RMH_BAND_C4,                             0) \
+    AS(RMH_BAND_D,                              1) \
+    AS(RMH_BAND_D_LOW,                          2) \
+    AS(RMH_BAND_D_HIGH,                         3) \
+    AS(RMH_BAND_D_EX,                           4) \
+    AS(RMH_BAND_E,                              5) \
+    AS(RMH_BAND_F,                              6) \
+    AS(RMH_BAND_H,                              8)
+typedef enum RMH_Band { ENUM_RMH_Band } RMH_Band;
+
 typedef struct RMH_EventData {
     union {
         struct {

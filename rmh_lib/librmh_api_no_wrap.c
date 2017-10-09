@@ -70,6 +70,7 @@ __attribute__((visibility("hidden"))) const char * const RMH_ResultStr[] = { ENU
 __attribute__((visibility("hidden"))) const char * const RMH_LinkStatusStr[] = { ENUM_RMH_LinkStatus };
 __attribute__((visibility("hidden"))) const char * const RMH_AdmissionStatusStr[] = { ENUM_RMH_AdmissionStatus };
 __attribute__((visibility("hidden"))) const char * const RMH_PowerModeStr[] = { ENUM_RMH_PowerMode };
+__attribute__((visibility("hidden"))) const char * const RMH_BandStr[] = { ENUM_RMH_Band };
 __attribute__((visibility("hidden"))) const char * const RMH_MoCAVersionStr[] = { ENUM_RMH_MoCAVersion };
 __attribute__((visibility("hidden"))) const char * const RMH_LogLevelStr[] = { ENUM_RMH_LogLevel };
 __attribute__((visibility("hidden"))) const char * const RMH_EventStr[] = { ENUM_RMH_Event };
@@ -84,6 +85,10 @@ const char* const RMH_LinkStatusToString(const RMH_LinkStatus value) {
 
 const char* const RMH_AdmissionStatusToString(const RMH_AdmissionStatus value) {
     return RMH_AdmissionStatusStr[value];
+}
+
+const char* const RMH_BandToString(const RMH_Band value) {
+    return RMH_BandStr[value];
 }
 
 const char* const RMH_MoCAVersionToString(const RMH_MoCAVersion value) {

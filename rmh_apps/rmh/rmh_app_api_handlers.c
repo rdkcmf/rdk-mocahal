@@ -502,6 +502,16 @@ RMH_Result RMHApp__OUT_POWER_MODE(RMHApp *app, RMH_Result (*api)(const RMH_Handl
 }
 
 static
+RMH_Result RMHApp__OUT_BAND(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, RMH_Band* response)) {
+    RMH_Band response=0;
+    RMH_Result ret = api(app->rmh, &response);
+    if (ret == RMH_SUCCESS) {
+        RMH_PrintMsg("%s\n", RMH_BandToString(response));
+    }
+    return ret;
+}
+
+static
 RMH_Result RMHApp__OUT_LINK_STATUS(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, RMH_LinkStatus* response)) {
     RMH_LinkStatus response=0;
     RMH_Result ret = api(app->rmh, &response);
@@ -783,6 +793,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetPreferredNCEnabled,                         "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetMaxPacketAggregation,                       "");
     SET_API_HANDLER(RMHApp__IN_UINT32,                          RMH_Self_SetMaxPacketAggregation,                       "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetMaxFrameSize,                               "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_HEX,                     RMH_Self_GetFrequencyMask,                              "");
     SET_API_HANDLER(RMHApp__IN_UINT32_HEX,                      RMH_Self_SetFrequencyMask,                              "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetLowBandwidthLimit,                          "");
@@ -794,6 +805,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__HANDLE_ONLY,                        RMH_Self_RestoreDefaultSettings,                        "");
     SET_API_HANDLER(RMHApp__OUT_LINK_STATUS,                    RMH_Self_GetLinkStatus,                                 "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetQAM256Enabled,                              "");
+    SET_API_HANDLER(RMHApp__OUT_BAND,                           RMH_Self_GetSupportedBand,                              "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetQAM256Enabled,                              "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetQAM256TargetPhyRate,                        "");
     SET_API_HANDLER(RMHApp__IN_UINT32,                          RMH_Self_SetQAM256TargetPhyRate,                        "");
@@ -917,6 +929,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_BOOL,                 RMH_RemoteNode_GetQAM256Capable,                        "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_BOOL,                 RMH_RemoteNode_GetBondingCapable,                       "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetMaxPacketAggregation,                 "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetMaxFrameSize,                         "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetRxPackets,                            "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetRxUnicastPhyRate,                     "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetRxBroadcastPhyRate,                   "");

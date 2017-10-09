@@ -316,7 +316,7 @@ const char* const RMH_PowerModeToString(const uint32_t value, char* responseBuf,
 RMH_PowerModeToString,
 
 /* Description */
-"Return a the bitmask <value> as a string. The bitmask is expected to contain one or more of <RMH_PowerMode>",
+"The input <value> should be a a bitmask of type <RMH_PowerMode>. This will be converted to a printable string.",
 
 /* Parameters */
 PARAMETERS(
@@ -330,6 +330,32 @@ FALSE,
 
 /* Tags */
 "Core,Power"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+const char* const RMH_BandToString(const RMH_Band value),
+
+/* API Name */
+RMH_BandToString,
+
+/* Description */
+"Convert <value> to a printable string.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(value,            const RMH_Band,           "Value to be printed as a string")
+),
+
+/* Wrap API */
+FALSE,
+
+/* Tags */
+"Core"
 /********************************************************************************************************************/
 )
 
@@ -865,6 +891,33 @@ TRUE,
 RMH_API_IMPLEMENTATION_SOC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+RMH_Result RMH_Self_GetMaxFrameSize(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Self_GetMaxFrameSize,
+
+/* Description */
+"The maximum number of bytes this node can receive in one frame (aggregated transmission).",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The maximum number of packets this device will aggregate")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get]"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 RMH_Result RMH_Self_GetLowBandwidthLimit(const RMH_Handle handle, uint32_t* response),
 
 /* API Name */
@@ -1017,6 +1070,42 @@ PARAMETERS(
     OUTPUT_PARAM(responseArray,     uint32_t*,              "An array where the frequency list should be stored"),
     INPUT_PARAM(responseArraySize,  const size_t,           "The size of the response array"),
     OUTPUT_PARAM(responseArrayUsed, size_t*,                "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get],Frequency"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetSupportedBand(const RMH_Handle handle, RMH_Band* response),
+
+/* API Name */
+RMH_Self_GetSupportedBand,
+
+/* Description */
+"Return the band supported by the MoCA device.\n\n"
+"  --- Band Frequencies -------------------------------------------------------\n"
+"  RMH_BAND_C4 [MoCA 1.1]: 1000\n"
+"  RMH_BAND_D [MoCA 1.1]: 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500\n"
+"  RMH_BAND_D_LOW: 1125, 1150, 1175, 1200, 1225\n"
+"  RMH_BAND_D_HIGH: 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625\n"
+"  RMH_BAND_D_EX: 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500\n"
+"  RMH_BAND_E: 500, 525, 550, 575, 600\n"
+"  RMH_BAND_F: 675, 700, 725, 750, 775, 800, 825, 850\n"
+"  RMH_BAND_H: 975, 1000, 1025\n",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,          RMH_Band*,              "The band supported by this MoCA device")
 ),
 
 /* Wrap API */
@@ -2689,6 +2778,33 @@ TRUE,
 /********************************************************************************************************************/
 )
 
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetMaxFrameSize(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response),
+
+/* API Name */
+RMH_RemoteNode_GetMaxFrameSize,
+
+/* Description */
+"The maximum number of bytes this node can receive in one frame (aggregated transmission).",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,         const uint32_t,         "The node Id of the remote node to inspect"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The maximum number of packets this device will aggregate")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
 
 
 RMH_API_IMPLEMENTATION_SOC_ONLY(
