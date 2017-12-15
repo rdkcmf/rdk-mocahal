@@ -27,6 +27,7 @@
 #define RDK_FILE_PATH_VERSION               "/version.txt"
 #define RDK_FILE_PATH_DEBUG_ENABLE          "/opt/rmh_start_enable_debug"
 #define RDK_FILE_PATH_DEBUG_FOREVER_ENABLE  "/opt/rmh_start_enable_debug_forever"
+#define LOCAL_MODULATION_PRINT_LINE_SIZE 256
 
 static
 RMH_Result pRMH_IOCTL_Get(const RMH_Handle handle, const char* name, struct ifreq *ifrq) {
@@ -374,6 +375,179 @@ RMH_Result GENERIC_IMPL__RMH_Self_GetLinkStatus(const RMH_Handle handle, RMH_Lin
     return RMH_SUCCESS;
 }
 
+static inline
+uint32_t PrintModulationToString(char *outBuf, uint32_t outBufSize, const bool firstPrint, const RMH_SubcarrierProfile* array, const size_t arraySize, const uint32_t end, int32_t *start, bool *done) {
+    int32_t j;
+    int32_t pos=*start;
+    int32_t  offset = pos < end ? 1 : -1;
+    int32_t outBufRemaining=outBufSize;
+    bool disablePrint=false;
+    int charsToBeWritten;
+
+    if (firstPrint) {
+        charsToBeWritten = snprintf(outBuf, outBufRemaining, "    |  [%3u-%3u]  |  ", pos, pos+(31*offset));
+        /* Update the remaining space in the buffer */
+        if (charsToBeWritten < 0 || charsToBeWritten >= outBufRemaining) charsToBeWritten=outBufRemaining;
+        outBuf += charsToBeWritten;
+        outBufRemaining -= charsToBeWritten;
+    }
+
+    for (j=0; j<32; j++) {
+        /* If the index is out of bounds or we've reached the end, stop printing */
+        if (*done || pos >= arraySize || pos < 0) disablePrint=true;
+
+        /* If printing is disabled still print a space to keep columns in order */
+        charsToBeWritten = disablePrint ? snprintf(outBuf, outBufRemaining, " ") :
+                                          snprintf(outBuf, outBufRemaining, "%X", array[pos]);
+
+        /* Update the remaining space in the buffer */
+        if (charsToBeWritten < 0 || charsToBeWritten >= outBufRemaining) charsToBeWritten=outBufRemaining;
+        outBuf += charsToBeWritten;
+        outBufRemaining -= charsToBeWritten;
+
+        /* Check if we've reached the 'end'. This variable is enclusive so check after the print. */
+        if (pos == end) *done=true;
+        if (!*done) pos+=offset;
+    }
+
+    charsToBeWritten = snprintf(outBuf, outBufRemaining, "  |  ");
+    /* Update the remaining space in the buffer */
+    if (charsToBeWritten < 0 || charsToBeWritten >= outBufRemaining) charsToBeWritten=outBufRemaining;
+    outBuf += charsToBeWritten;
+    outBufRemaining -= charsToBeWritten;
+
+    *start=pos;
+    return outBufSize - outBufRemaining;
+}
+
+static
+RMH_Result RMH_Print_MODULATION(const RMH_Handle handle, const uint32_t start, const uint32_t end,
+                                                            const char*h0, const RMH_SubcarrierProfile* p0, const size_t p0Size,
+                                                            const char*h1, const RMH_SubcarrierProfile* p1, const size_t p1Size,
+                                                            const char*h2, const RMH_SubcarrierProfile* p2, const size_t p2Size,
+                                                            const char*h3, const RMH_SubcarrierProfile* p3, const size_t p3Size) {
+    char line[LOCAL_MODULATION_PRINT_LINE_SIZE];
+    const char *lineEnd=line + LOCAL_MODULATION_PRINT_LINE_SIZE;
+
+    #define MAX_COLS 4
+    int32_t i[MAX_COLS];
+    bool done[MAX_COLS];
+    bool valid[MAX_COLS];
+    const char* printHeader[MAX_COLS];
+    uint32_t printHeaderLen[MAX_COLS];
+    bool complete=false;
+    uint32_t headerLength = 0;
+    int j;
+
+    valid[0] = (p0 != NULL && p0Size >0);
+    valid[1] = (p1 != NULL && p1Size >0);
+    valid[2] = (p2 != NULL && p2Size >0);
+    valid[3] = (p3 != NULL && p3Size >0);
+    printHeader[0] = (h0 != NULL && valid[0]) ? h0 : "";
+    printHeader[1] = (h1 != NULL && valid[1]) ? h1 : "";
+    printHeader[2] = (h2 != NULL && valid[2]) ? h2 : "";
+    printHeader[3] = (h3 != NULL && valid[3]) ? h3 : "";
+    printHeaderLen[0] = strlen(printHeader[0]);
+    printHeaderLen[1] = strlen(printHeader[1]);
+    printHeaderLen[2] = strlen(printHeader[2]);
+    printHeaderLen[3] = strlen(printHeader[3]);
+
+    for(j=0; j != MAX_COLS; j++) {
+        i[j]=start;
+        done[j]=false;
+        headerLength += printHeaderLen[j];
+    }
+
+    if (headerLength > 0) {
+        RMH_PrintMsg("    | Subcarrier  | ");
+        for(j=0; j != MAX_COLS; j++) {
+            if (printHeaderLen[j] > 0) {
+                RMH_PrintMsg("%-34s | ", printHeader[j]);
+            }
+        }
+
+        RMH_PrintMsg("\n     -------------|%s%s%s%s\n",
+                                (printHeaderLen[0] > 0) ? "------------------------------------|" : "",
+                                (printHeaderLen[1] > 0) ? "------------------------------------|" : "",
+                                (printHeaderLen[2] > 0) ? "------------------------------------|" : "",
+                                (printHeaderLen[3] > 0) ? "------------------------------------|" : "");
+    }
+
+    while(!complete) {
+        char *linePos=line;
+        uint32_t lineRemaining=LOCAL_MODULATION_PRINT_LINE_SIZE-1; /* -1 for NULL terminator */
+        complete=true;
+
+        if (valid[0]) {
+            linePos+=PrintModulationToString(linePos, lineRemaining, true,  p0, p0Size, end, &i[0], &done[0]);
+            lineRemaining=linePos>lineEnd ? 0 : lineEnd-linePos;
+            complete&=done[0];
+        }
+
+        if (valid[1]) {
+            linePos+=PrintModulationToString(linePos, lineRemaining, false,  p1, p1Size, end, &i[1], &done[1]);
+            lineRemaining=linePos>lineEnd ? 0 : lineEnd-linePos;
+            complete&=done[1];
+        }
+
+        if (valid[2]) {
+            linePos+=PrintModulationToString(linePos, lineRemaining, false,  p2, p2Size, end, &i[2], &done[2]);
+            lineRemaining=linePos>lineEnd ? 0 : lineEnd-linePos;
+            complete&=done[2];
+        }
+
+        if (valid[3]) {
+            linePos+=PrintModulationToString(linePos, lineRemaining, false,  p3, p3Size, end, &i[3], &done[3]);
+            lineRemaining=linePos>lineEnd ? 0 : lineEnd-linePos;
+            complete&=done[3];
+        }
+
+        RMH_PrintMsg("%s\n", line);
+    }
+    return RMH_SUCCESS;
+}
+
+static
+RMH_Result RMH_Print_UINT32_NODEMESH(const RMH_Handle handle, RMH_Result (*api)(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response)) {
+    RMH_NodeMesh_Uint32_t response;
+    int i,j;
+
+    RMH_Result ret = api(handle, &response);
+    if (ret == RMH_SUCCESS) {
+        char strBegin[256];
+        char *strEnd=strBegin+sizeof(strBegin);
+        char *str=strBegin;
+
+        str+=snprintf(str, strEnd-str, "   ");
+        for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
+            if (response.nodePresent[i]) {
+                str+=snprintf(str, strEnd-str, "  %02u ", i);
+            }
+        }
+        RMH_PrintMsg("%s\n", strBegin);
+
+        for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
+            if (response.nodePresent[i]) {
+                char *str=strBegin;
+                RMH_NodeList_Uint32_t *nl = &response.nodeValue[i];
+                str+=snprintf(str, strEnd-str, "%02u: ", i);
+                for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
+                    if (i == j) {
+                        str+=snprintf(str, strEnd-str, " --  ");
+                    } else if (response.nodePresent[j]) {
+                        str+=snprintf(str, strEnd-str, "%04u ", nl->nodeValue[j]);
+                    }
+                }
+                RMH_PrintMsg("%s\n", strBegin);
+            }
+        }
+    }
+    else {
+        RMH_PrintMsg("%s\n", RMH_ResultToString(ret));
+    }
+
+    return ret;
+}
 
 #define PRINT_STATUS_MACRO(api, type, apiFunc, fmt, ...) { \
     type; \
@@ -407,8 +581,7 @@ RMH_Result GENERIC_IMPL__RMH_Self_GetLinkStatus(const RMH_Handle handle, RMH_Lin
 RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char* filename) {
     RMH_Result ret;
     bool enabled;
-    int i,j;
-    RMH_NodeMesh_Uint32_t mesh;
+    int i;
 
     if (filename) {
         handle->localLogToFile=fopen(filename, "a");
@@ -442,7 +615,7 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
     PRINT_STATUS_BOOL(RMH_Self_GetTurboEnabled);
     PRINT_STATUS_BOOL(RMH_Self_GetBondingEnabled);
     PRINT_STATUS_BOOL(RMH_Self_GetPrivacyEnabled);
-    PRINT_STATUS_STRING(RMH_Self_GetPrivacyPassword);
+    PRINT_STATUS_STRING(RMH_Self_GetPrivacyMACManagementKey);
     PRINT_STATUS_LOG_LEVEL(RMH_Log_GetDriverLevel);
     PRINT_STATUS_STRING(RMH_Log_GetDriverFilename);
     PRINT_STATUS_PowerMode(RMH_Power_GetMode);
@@ -491,39 +664,7 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
             }
 
             RMH_PrintMsg("\n= PHY Rates =========\n");
-            ret = RMH_Network_GetTxUnicastPhyRate(handle, &mesh);
-            if (ret == RMH_SUCCESS) {
-                char phyStrBegin[256];
-                char *phyStrEnd=phyStrBegin+sizeof(phyStrBegin);
-                char *phyStr=phyStrBegin;
-
-                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "   ");
-                for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
-                    if (mesh.nodePresent[i]) {
-                        phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "  %02u ", i);
-                    }
-                }
-                RMH_PrintMsg("%s\n", phyStrBegin);
-
-                for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
-                    if (mesh.nodePresent[i]) {
-                        char *phyStr=phyStrBegin;
-                        RMH_NodeList_Uint32_t *nl = &mesh.nodeValue[i];
-                        phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "%02u: ", i);
-                        for (j = 0; j < RMH_MAX_MOCA_NODES; j++) {
-                            if (i == j) {
-                                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, " --  ");
-                            } else if (mesh.nodePresent[j]) {
-                                phyStr+=snprintf(phyStr, phyStrEnd-phyStr, "%04u ", nl->nodeValue[j]);
-                            }
-                        }
-                        RMH_PrintMsg("%s\n", phyStrBegin);
-                    }
-                }
-            }
-            else {
-                RMH_PrintMsg("%s\n", RMH_ResultToString(ret));
-            }
+            RMH_Print_UINT32_NODEMESH(handle, RMH_Network_GetTxUnicastPhyRate);
         }
         else {
             RMH_PrintMsg("*** MoCA link is down! ***\n");
@@ -670,6 +811,190 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintFlows(const RMH_Handle handle, const char*
     if (handle->localLogToFile) {
         fclose(handle->localLogToFile);
         handle->localLogToFile=NULL;
+    }
+    return RMH_SUCCESS;
+}
+
+RMH_Result GENERIC_IMPL__RMH_Log_PrintModulation(const RMH_Handle handle, const char* filename) {
+    uint32_t selfNodeId;
+    uint32_t nodeId;
+    RMH_MoCAVersion selfMoCAVersion;
+    RMH_MoCAVersion remoteMoCAVersion;
+    RMH_Result ret;
+    RMH_NodeList_Uint32_t nodes;
+    RMH_SubcarrierProfile p[4][512];
+    uint32_t pUsed[4];
+
+
+    ret = RMH_Network_GetNodeId(handle, &selfNodeId);
+    if (ret != RMH_SUCCESS) {
+        return ret;
+    }
+
+    ret = RMH_RemoteNode_GetActiveMoCAVersion(handle, selfNodeId, &selfMoCAVersion);
+    if (ret != RMH_SUCCESS) {
+        return ret;
+    }
+
+    ret = RMH_Network_GetRemoteNodeIds(handle, &nodes);
+    if (ret != RMH_SUCCESS) {
+        return ret;
+    }
+
+    RMH_PrintMsg("Subcarrier Modulation To/From The Self Node %d [MoCA %s]\n", selfNodeId, RMH_MoCAVersionToString(selfMoCAVersion));
+    for (nodeId = 0; nodeId < RMH_MAX_MOCA_NODES; nodeId++) {
+        if (nodes.nodePresent[nodeId]) {
+            ret = RMH_RemoteNode_GetActiveMoCAVersion(handle, nodeId, &remoteMoCAVersion);
+            if (ret != RMH_SUCCESS) {
+                return ret;
+            }
+
+            RMH_PrintMsg("= Node ID %02u [MoCA %s] =======\n", nodeId, RMH_MoCAVersionToString(remoteMoCAVersion));
+            if (selfMoCAVersion == RMH_MOCA_VERSION_20 && remoteMoCAVersion == RMH_MOCA_VERSION_20) {
+                memset(pUsed, 0, sizeof(pUsed));
+                ret = RMH_RemoteNode_GetRxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_NOMINAL, p[0], sizeof(p[0])/sizeof(p[0][0]), &pUsed[0]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetRxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetTxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_NOMINAL, p[1], sizeof(p[1])/sizeof(p[1][0]), &pUsed[1]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetTxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetRxBroadcastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_NOMINAL, p[2], sizeof(p[2])/sizeof(p[2][0]), &pUsed[2]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetRxBroadcastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetTxBroadcastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_NOMINAL, p[3], sizeof(p[3])/sizeof(p[3][0]), &pUsed[3]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetTxBroadcastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                RMH_PrintMsg("    Nominal Packet Error Rate [RMH_PER_MODE_NOMINAL]:\n");
+                RMH_Print_MODULATION(handle, 256, 511,
+                                                    "Primary Unicast Rx (NPER)", p[0], pUsed[0],
+                                                    "Primary Unicast Tx (NPER)", p[1], pUsed[1],
+                                                    "Broadcast Rx (NPER)", p[2], pUsed[2],
+                                                    "Broadcast Tx (NPER)", p[3], pUsed[3]);
+
+                RMH_Print_MODULATION(handle, 0, 255,
+                                                    NULL, p[0], pUsed[0],
+                                                    NULL, p[1], pUsed[1],
+                                                    NULL, p[2], pUsed[2],
+                                                    NULL, p[3], pUsed[3]);
+
+                memset(pUsed, 0, sizeof(pUsed));
+                ret = RMH_RemoteNode_GetRxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_VERY_LOW, p[0], sizeof(p[0])/sizeof(p[0][0]), &pUsed[0]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetRxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetTxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_VERY_LOW, p[1], sizeof(p[1])/sizeof(p[1][0]), &pUsed[1]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetTxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetRxBroadcastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_VERY_LOW, p[2], sizeof(p[2])/sizeof(p[2][0]), &pUsed[2]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetRxBroadcastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetTxBroadcastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_VERY_LOW, p[3], sizeof(p[3])/sizeof(p[3][0]), &pUsed[3]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetTxBroadcastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                RMH_PrintMsg("\n    Nominal Packet Error Rate [RMH_PER_MODE_VERY_LOW]:\n");
+                RMH_Print_MODULATION(handle, 256, 511,
+                                                    "Primary Unicast Rx (VLPER)", p[0], pUsed[0],
+                                                    "Primary Unicast Tx (VLPER)", p[1], pUsed[1],
+                                                    "Broadcast Rx (VLPER)", p[2], pUsed[2],
+                                                    "Broadcast Tx (VLPER)", p[3], pUsed[3]);
+
+                RMH_Print_MODULATION(handle, 0, 255,
+                                                    NULL, p[0], pUsed[0],
+                                                    NULL, p[1], pUsed[1],
+                                                    NULL, p[2], pUsed[2],
+                                                    NULL, p[3], pUsed[3]);
+
+
+
+                memset(pUsed, 0, sizeof(pUsed));
+                ret = RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_NOMINAL, p[0], sizeof(p[0])/sizeof(p[0][0]), &pUsed[0]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_VERY_LOW, p[1], sizeof(p[1])/sizeof(p[1][0]), &pUsed[1]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_NOMINAL, p[2], sizeof(p[2])/sizeof(p[2][0]), &pUsed[2]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_VERY_LOW, p[3], sizeof(p[3])/sizeof(p[3][0]), &pUsed[3]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                RMH_PrintMsg("\n    Secondary Packet Error Rate:\n");
+                RMH_Print_MODULATION(handle, 256, 511,
+                                                    "Secondary Unicast Rx (NPER)", p[0], pUsed[0],
+                                                    "Secondary Unicast Rx (VLPER)", p[1], pUsed[1],
+                                                    "Secondary Unicast Tx (NPER)", p[2], pUsed[2],
+                                                    "Secondary Unicast Tx (VLPER)", p[3], pUsed[3]);
+
+
+                RMH_Print_MODULATION(handle, 0, 255,
+                                                    NULL, p[0], pUsed[0],
+                                                    NULL, p[1], pUsed[1],
+                                                    NULL, p[2], pUsed[2],
+                                                    NULL, p[3], pUsed[3]);
+
+            }
+            else {
+                memset(pUsed, 0, sizeof(pUsed));
+                ret = RMH_RemoteNode_GetRxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_LEGACY, p[0], sizeof(p[0])/sizeof(p[0][0]), &pUsed[0]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetRxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetTxUnicastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_LEGACY, p[1], sizeof(p[1])/sizeof(p[1][0]), &pUsed[1]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetTxUnicastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetRxBroadcastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_LEGACY, p[2], sizeof(p[2])/sizeof(p[2][0]), &pUsed[2]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetRxBroadcastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                ret = RMH_RemoteNode_GetTxBroadcastSubcarrierModulation(handle, nodeId, RMH_PER_MODE_LEGACY, p[3], sizeof(p[3])/sizeof(p[3][0]), &pUsed[3]);
+                if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_UNIMPLEMENTED) {
+                    RMH_PrintWrn("RMH_RemoteNode_GetTxBroadcastSubcarrierModulation: %s\n", RMH_ResultToString(ret));
+                }
+
+                RMH_PrintMsg("    Packet Error Rate [RMH_PER_MODE_LEGACY]:\n");
+                RMH_Print_MODULATION(handle, 127, 0,
+                                                    "Unicast Rx", p[0], pUsed[0],
+                                                    "Unicast Tx", p[1], pUsed[1],
+                                                    "Broadcast Rx", p[2], pUsed[2],
+                                                    "Broadcast Tx", p[3], pUsed[3]);
+
+                RMH_Print_MODULATION(handle, 255, 128,
+                                                    NULL, p[0], pUsed[0],
+                                                    NULL, p[1], pUsed[1],
+                                                    NULL, p[2], pUsed[2],
+                                                    NULL, p[3], pUsed[3]);
+
+            }
+            RMH_PrintMsg("\n\n");
+        }
     }
     return RMH_SUCCESS;
 }

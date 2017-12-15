@@ -302,6 +302,84 @@ FALSE,
 RMH_API_IMPLEMENTATION_GENERIC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+const char* const RMH_MoCAResetReasonToString(const RMH_MoCAResetReason value),
+
+/* API Name */
+RMH_MoCAResetReasonToString,
+
+/* Description */
+"Convert <RMH_MoCAResetReason> to a string",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(value,            const RMH_MoCAResetReason,        "Value to be printed as a string")
+),
+
+/* Wrap API */
+FALSE,
+
+/* Tags */
+"Core"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+const char* const RMH_SubcarrierProfileToString(const RMH_SubcarrierProfile value),
+
+/* API Name */
+RMH_SubcarrierProfileToString,
+
+/* Description */
+"Convert <RMH_SubcarrierProfile> to a string",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(value,            const RMH_SubcarrierProfile,        "Value to be printed as a string")
+),
+
+/* Wrap API */
+FALSE,
+
+/* Tags */
+"Core"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+const char* const RMH_PERModeToString(const RMH_PERMode value),
+
+/* API Name */
+RMH_PERModeToString,
+
+/* Description */
+"Convert <RMH_PERMode> to a string",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(value,            const RMH_PERMode,        "Value to be printed as a string")
+),
+
+/* Wrap API */
+FALSE,
+
+/* Tags */
+"Core"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 const char* const RMH_MoCAVersionToString(const RMH_MoCAVersion value),
 
 /* API Name */
@@ -458,6 +536,58 @@ FALSE,
 
 /* Tags */
 "Core,mac"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+const char* const RMH_ACATypeToString(const RMH_ACAType value),
+
+/* API Name */
+RMH_ACATypeToString,
+
+/* Description */
+"Convert <value> to a printable string.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(value,            const RMH_ACAType,           "Value to be printed as a string")
+),
+
+/* Wrap API */
+FALSE,
+
+/* Tags */
+"Core"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+const char* const RMH_ACAStatusToString(const RMH_ACAStatus value),
+
+/* API Name */
+RMH_ACAStatusToString,
+
+/* Description */
+"Convert <value> to a printable string.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(value,            const RMH_ACAStatus,           "Value to be printed as a string")
+),
+
+/* Wrap API */
+FALSE,
+
+/* Tags */
+"Core"
 /********************************************************************************************************************/
 )
 
@@ -724,13 +854,121 @@ TRUE,
 RMH_API_IMPLEMENTATION_SOC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+RMH_Result RMH_Self_GetPrimaryChannelOffset(const RMH_Handle handle, int32_t* response),
+
+/* API Name */
+RMH_Self_GetPrimaryChannelOffset,
+
+/* Description */
+"TBD [mocaIfPrimaryChannelOffset]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      int32_t*,               "TBD")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get],NC"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_SetPrimaryChannelOffset(const RMH_Handle handle, const int32_t value),
+
+/* API Name */
+RMH_Self_SetPrimaryChannelOffset,
+
+/* Description */
+"TBD [mocaIfSecondaryChannelOffset]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(value,          const int32_t,          "TBD")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set],NC"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetSecondaryChannelOffset(const RMH_Handle handle, int32_t* response),
+
+/* API Name */
+RMH_Self_GetSecondaryChannelOffset,
+
+/* Description */
+"TBD",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      int32_t*,               "TBD")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get],NC"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_SetSecondaryChannelOffset(const RMH_Handle handle, const int32_t value),
+
+/* API Name */
+RMH_Self_SetSecondaryChannelOffset,
+
+/* Description */
+"TBD",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(value,          const int32_t,          "TBD")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set],NC"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 RMH_Result RMH_Self_GetSoftwareVersion(const RMH_Handle handle, char* responseBuf, const size_t responseBufSize),
 
 /* API Name */
 RMH_Self_GetSoftwareVersion,
 
 /* Description */
-"Return the version of software being used by the MoCA driver on this device.",
+"Return the version of software being used by the MoCA driver on this device. [mocaIfSoftwareVersion]",
 
 /* Parameters */
 PARAMETERS(
@@ -758,7 +996,7 @@ RMH_Result RMH_Self_GetHighestSupportedMoCAVersion(const RMH_Handle handle, RMH_
 RMH_Self_GetHighestSupportedMoCAVersion,
 
 /* Description */
-"Return the highest version of MoCA supported by the MoCA driver on this device.",
+"Return the highest version of MoCA supported by the MoCA driver on this device. [mocaIfMocaVersion]",
 
 /* Parameters */
 PARAMETERS(
@@ -861,7 +1099,7 @@ RMH_Result RMH_Self_GetMaxPacketAggregation(const RMH_Handle handle, uint32_t* r
 RMH_Self_GetMaxPacketAggregation,
 
 /* Description */
-"Get the maximum number of packets this device will aggregate",
+"Get the maximum number of packets this device will aggregate. [mocaIfPduNumber]",
 
 /* Parameters */
 PARAMETERS(
@@ -915,7 +1153,7 @@ RMH_Result RMH_Self_GetMaxFrameSize(const RMH_Handle handle, uint32_t* response)
 RMH_Self_GetMaxFrameSize,
 
 /* Description */
-"The maximum number of bytes this node can receive in one frame (aggregated transmission).",
+"The maximum number of bytes this node can receive in one frame (aggregated transmission). [mocaIfAggregationSize]",
 
 /* Parameters */
 PARAMETERS(
@@ -928,6 +1166,33 @@ TRUE,
 
 /* Tags */
 "Configuration [Get]"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_SetMaxFrameSize(const RMH_Handle handle, const uint32_t value),
+
+/* API Name */
+RMH_Self_SetMaxFrameSize,
+
+/* Description */
+"Set the maximum number of bytes this node can receive in one frame (aggregated transmission).",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(value,          const uint32_t,         "The maximum number of packets this device can aggregate")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set]"
 /********************************************************************************************************************/
 )
 
@@ -1080,7 +1345,7 @@ RMH_Self_GetSupportedFrequencies,
 
 /* Description */
 "Return a list of frequencies in the band used by this node. This frequency list does not account for taboo channels "
-"or other filters which would limit the scope of frequencies this device would use to join a network.",
+"or other filters which would limit the scope of frequencies this device would use to join a network. [mocaIfChannelSupport]",
 
 /* Parameters */
 PARAMETERS(
@@ -1109,7 +1374,7 @@ RMH_Result RMH_Self_GetSupportedBand(const RMH_Handle handle, RMH_Band* response
 RMH_Self_GetSupportedBand,
 
 /* Description */
-"Return the band supported by the MoCA device.\n\n"
+"Return the band supported by the MoCA device. [mocaIfSupportedBands]\n\n"
 "  --- Band Frequencies -------------------------------------------------------\n"
 "  RMH_BAND_C4 [MoCA 1.1]: 1000\n"
 "  RMH_BAND_D [MoCA 1.1]: 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500\n"
@@ -1389,7 +1654,7 @@ RMH_Result RMH_Self_GetLinkStatus(const RMH_Handle handle, RMH_LinkStatus* statu
 RMH_Self_GetLinkStatus,
 
 /* Description */
-"Current operational status of the MoCA interface. This API combines all known information about the MoCA device, "
+"Current operational status of the MoCA interface [mocaIfStatus]. This API combines all known information about the MoCA device, "
 "including the driver, MoCA link, interface status, ect. to determine if the link is functional. >RMH_LINK_STATUS_UP> "
 "indicates MoCA is ready for use.",
 
@@ -1491,6 +1756,33 @@ TRUE,
 )
 
 
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetPrivacyMACManagementKey(RMH_Handle handle, char* responseBuf, const size_t responseBufSize),
+
+/* API Name */
+RMH_Self_GetPrivacyMACManagementKey,
+
+/* Description */
+"Get the SHA1 hash of the MoCA password as an ASCII string. [mocaIfPasswordHash]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,   "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(responseBuf,       char*,              "A buffer where the MoCA managment key will be written"),
+    INPUT_PARAM(responseBufSize,    const size_t,       "The size in bytes of the buffer <responseBuf>")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Self,Privacy"
+/********************************************************************************************************************/
+)
+
+
 
 RMH_API_IMPLEMENTATION_SOC_ONLY(
 /********************************************************************************************************************/
@@ -1517,6 +1809,7 @@ TRUE,
 "Configuration [Set],Privacy"
 /********************************************************************************************************************/
 )
+
 
 
 
@@ -1610,6 +1903,61 @@ TRUE,
 
 
 
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetMaxAllocationElements(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Self_GetMaxAllocationElements,
+
+/* Description */
+"Return the maximum number of allocation elements, excluding the TAUs and the Dummy DAUs, in one MAP the Node can process [mocaIfAeNumber]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "Maximum number of allocation elements")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get]"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetLastResetReason(const RMH_Handle handle, RMH_MoCAResetReason* response),
+
+
+/* API Name */
+RMH_Self_GetLastResetReason,
+
+/* Description */
+"Return the reason for the most recent link reset [mocaIfResetReason]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,          RMH_MoCAResetReason*,   "The reason for the most recent link reset")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Network,Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
 RMH_API_IMPLEMENTATION_GENERIC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
@@ -1676,7 +2024,7 @@ RMH_Result RMH_Interface_GetName(const RMH_Handle handle, char* responseBuf, con
 RMH_Interface_GetName,
 
 /* Description */
-"Return the Linux interface name associated with the MoCA device",
+"Return the Linux interface name associated with the MoCA device. [mocaIfName]",
 
 /* Parameters */
 PARAMETERS(
@@ -1704,7 +2052,7 @@ RMH_Result RMH_Interface_GetMac(const RMH_Handle handle, RMH_MacAddress_t* respo
 RMH_Interface_GetMac,
 
 /* Description */
-"Return the MAC address associated with this MoCA device.",
+"Return the MAC address associated with this MoCA device. [mocaIfMacAddress]",
 
 /* Parameters */
 PARAMETERS(
@@ -1785,7 +2133,7 @@ RMH_Result RMH_Power_GetSupportedModes(const RMH_Handle handle, uint32_t* respon
 RMH_Power_GetSupportedModes,
 
 /* Description */
-"Return a bitmask of <RMH_PowerMode> indicating all MoCA power modes supported by this device.",
+"Return a bitmask of <RMH_PowerMode> indicating all MoCA power modes supported by this device. [mocaIfPowerStateCap]",
 
 /* Parameters */
 PARAMETERS(
@@ -1975,7 +2323,7 @@ RMH_Result RMH_Network_GetNumNodes(const RMH_Handle handle, uint32_t* response),
 RMH_Network_GetNumNodes,
 
 /* Description */
-"Return the number of MoCA nodes in the network.",
+"Return the number of MoCA nodes in the network. [mocaIfNumNodes]",
 
 /* Parameters */
 PARAMETERS(
@@ -2002,7 +2350,7 @@ RMH_Result RMH_Network_GetNodeId(const RMH_Handle handle, uint32_t* response),
 RMH_Network_GetNodeId,
 
 /* Description */
-"Return the node ID of this device. This is a zero based ID which uniquely identifies this node on the network.",
+"Return the node ID of this device. [mocaIfNodeID] This is a zero based ID which uniquely identifies this node on the network.",
 
 /* Parameters */
 PARAMETERS(
@@ -2110,7 +2458,7 @@ RMH_Result RMH_Network_GetNCNodeId(const RMH_Handle handle, uint32_t* response),
 RMH_Network_GetNCNodeId,
 
 /* Description */
-"Return the node ID of the network coordinator.",
+"Return the node ID of the network coordinator. [mocaIfNC]",
 
 /* Parameters */
 PARAMETERS(
@@ -2137,7 +2485,7 @@ RMH_Result RMH_Network_GetBackupNCNodeId(const RMH_Handle handle, uint32_t* resp
 RMH_Network_GetBackupNCNodeId,
 
 /* Description */
-"Return the node ID of the backup network coordinator.",
+"Return the node ID of the backup network coordinator. [mocaIfBackupNC]",
 
 /* Parameters */
 PARAMETERS(
@@ -2191,7 +2539,7 @@ RMH_Result RMH_Network_GetLinkUptime(const RMH_Handle handle, uint32_t* response
 RMH_Network_GetLinkUptime,
 
 /* Description */
-"Returns the amount of time this node has been part of the MoCA network. Time is in seconds",
+"Returns the amount of time this node has been part of the MoCA network [mocaIfLinkUpTime]. Time is in seconds",
 
 /* Parameters */
 PARAMETERS(
@@ -2204,6 +2552,60 @@ TRUE,
 
 /* Tags */
 "Network,Link"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Network_GetResetCount(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Network_GetResetCount,
+
+/* Description */
+"Returns the number of times the MoCA link has gone down since the last boot. [mocaIfResetCount]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "Number of seconds this node has been in the network")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Network,Link,"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Network_GetLinkDownCount(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Network_GetLinkDownCount,
+
+/* Description */
+"Returns the number of times the MoCA link has gone down since the last boot. [mocaIfLinkDownCount]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "Number of seconds this node has been in the network")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Network,Link,"
 /********************************************************************************************************************/
 )
 
@@ -2245,7 +2647,7 @@ RMH_Result RMH_Network_GetRFChannelFreq(const RMH_Handle handle, uint32_t* respo
 RMH_Network_GetRFChannelFreq,
 
 /* Description */
-"Return the frequency which the MoCA network is operating on",
+"Return the frequency which the MoCA network is operating on. [mocaIfRFChannel]",
 
 /* Parameters */
 PARAMETERS(
@@ -2326,7 +2728,7 @@ RMH_Result RMH_Network_GetMoCAVersion(const RMH_Handle handle, RMH_MoCAVersion* 
 RMH_Network_GetMoCAVersion,
 
 /* Description */
-"Return the version of MoCA under which the network is operating.",
+"Return the version of MoCA under which the network is operating. [mocaIfNetworkVersion]",
 
 /* Parameters */
 PARAMETERS(
@@ -2359,6 +2761,33 @@ RMH_Network_GetTxBroadcastPhyRate,
 PARAMETERS(
     INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
     OUTPUT_PARAM(response,      uint32_t*,              "The broadcast transmission PHY rate")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get],Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Network_GetTxGCDPhyRate(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Network_GetTxGCDPhyRate,
+
+/* Description */
+"Return the GCD PHY rate which packets are transmitted from this node. [mocaIfTxGcdRate]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The GCD transmission PHY rate")
 ),
 
 /* Wrap API */
@@ -2407,7 +2836,7 @@ RMH_Result RMH_Network_GetTxGcdPowerReduction(const RMH_Handle handle, uint32_t*
 RMH_Network_GetTxGcdPowerReduction,
 
 /* Description */
-"The transmit power control back-off used for broadcast transmissions from this node",
+"The transmit power control back-off used for broadcast transmissions from this node. [mocaIfTxGcdPowerReduction]",
 
 /* Parameters */
 PARAMETERS(
@@ -2437,7 +2866,7 @@ RMH_Network_GetTabooChannels,
 "Return which beacon channels will be taboo on this device. <channelMaskStart> will indicate the channel number of the lowest "
 "RF frequency covered by <channel mask>. The bitmask <channelMask> is then used to identify exactly which frequencies "
 "are taboo. Each consecutive bit of <channelMask> corresponds to channels offset by multiples of 25MHz. A bit in "
-"<channelMask> will be set to '1' if that channel is taboo.",
+"<channelMask> will be set to '1' if that channel is taboo. [mocaIfTabooChannelMask]",
 
 /* Parameters */
 PARAMETERS(
@@ -3240,6 +3669,275 @@ TRUE,
 
 /* Tags */
 "Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_Reset(const RMH_Handle handle, const uint32_t nodeListMask, const uint32_t startTime),
+
+
+/* API Name */
+RMH_RemoteNode_Reset,
+
+/* Description */
+"Instruct one or more nodes to initiate a MoCA Reset command. This will result in the specfied nodes dropping from the network and then rejoining.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeListMask,       const uint32_t,         "A bitmask of nodes to be reset [mocaIfMrNodeMask]. For example, to reset a given node use 'nodeListMask |= (1 << nodeId)'"),
+    INPUT_PARAM(startTime,          const uint32_t,         "The time in seconds to start the reset command [mocaIfMrStartTime]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Network,Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetRxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed),
+
+/* API Name */
+RMH_RemoteNode_GetRxUnicastSubcarrierModulation,
+
+/* Description */
+"Return the unicast recieve subcarrier modulation profiles for the primary MoCA channel.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(perMode,            const RMH_PERMode,      "The PER Mode to check. This parameter will be ignored for MoCA devices older than 2.0"),
+    OUTPUT_PARAM(responseArray,     RMH_SubcarrierProfile*, "An array where the sub carrier modulation should be stored"),
+    INPUT_PARAM(responseArraySize,  const size_t,           "The size of the response array"),
+    OUTPUT_PARAM(responseArrayUsed, size_t*,                "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetTxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed),
+
+/* API Name */
+RMH_RemoteNode_GetTxUnicastSubcarrierModulation,
+
+/* Description */
+"Return the unicast transmit subcarrier modulation profiles for the primary MoCA channel.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(perMode,            const RMH_PERMode,      "The PER Mode to check. This parameter will be ignored for MoCA devices older than 2.0"),
+    OUTPUT_PARAM(responseArray,     RMH_SubcarrierProfile*, "An array where the sub carrier modulation should be stored"),
+    INPUT_PARAM(responseArraySize,  const size_t,           "The size of the response array"),
+    OUTPUT_PARAM(responseArrayUsed, size_t*,                "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed),
+
+/* API Name */
+RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation,
+
+/* Description */
+"Return the unicast recieve subcarrier modulation profiles for the secondary MoCA channel.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(perMode,            const RMH_PERMode,      "The PER Mode to check. This parameter will be ignored for MoCA devices older than 2.0"),
+    OUTPUT_PARAM(responseArray,     RMH_SubcarrierProfile*, "An array where the sub carrier modulation should be stored"),
+    INPUT_PARAM(responseArraySize,  const size_t,           "The size of the response array"),
+    OUTPUT_PARAM(responseArrayUsed, size_t*,                "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed),
+
+/* API Name */
+RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation,
+
+/* Description */
+"Return the unicast transmit subcarrier modulation profiles for the secondary MoCA channel.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(perMode,            const RMH_PERMode,      "The PER Mode to check. This parameter will be ignored for MoCA devices older than 2.0"),
+    OUTPUT_PARAM(responseArray,     RMH_SubcarrierProfile*, "An array where the sub carrier modulation should be stored"),
+    INPUT_PARAM(responseArraySize,  const size_t,           "The size of the response array"),
+    OUTPUT_PARAM(responseArrayUsed, size_t*,                "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetRxBroadcastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed),
+
+/* API Name */
+RMH_RemoteNode_GetRxBroadcastSubcarrierModulation,
+
+/* Description */
+"Return the broadcast subcarrier modulation profiles for the channel. In the case of a MoCA 1.1 connection this will return the SubcarrierModulation",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(perMode,            const RMH_PERMode,      "The PER Mode to check. This parameter will be ignored for MoCA devices older than 2.0"),
+    OUTPUT_PARAM(responseArray,     RMH_SubcarrierProfile*, "An array where the sub carrier modulation should be stored"),
+    INPUT_PARAM(responseArraySize,  const size_t,           "The size of the response array"),
+    OUTPUT_PARAM(responseArrayUsed, size_t*,                "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetTxBroadcastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed),
+
+/* API Name */
+RMH_RemoteNode_GetTxBroadcastSubcarrierModulation,
+
+/* Description */
+"Return the broadcast subcarrier modulation profiles for the channel. In the case of a MoCA 1.1 connection this will return the SubcarrierModulation",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(perMode,            const RMH_PERMode,      "The PER Mode to check. This parameter will be ignored for MoCA devices older than 2.0"),
+    OUTPUT_PARAM(responseArray,     RMH_SubcarrierProfile*, "An array where the sub carrier modulation should be stored"),
+    INPUT_PARAM(responseArraySize,  const size_t,           "The size of the response array"),
+    OUTPUT_PARAM(responseArrayUsed, size_t*,                "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_PQOS_GetMaxIngressFlows(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_PQOS_GetMaxIngressFlows,
+
+/* Description */
+"Return the maximum number of supported Ingress PQoS Flows by the Node [mocaIfSupportedIngressPqosFlows]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "Maximum number of supported Ingress PQoS Flows by the Node")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"PQoS"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_PQOS_GetMaxEgressFlows(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_PQOS_GetMaxEgressFlows,
+
+/* Description */
+"Return the maximum number of supported Egress PQoS Flows by the Node [mocaIfSupportedEgressPqosFlows]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "Maximum number of supported Egress PQoS Flows by the Node")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"PQoS"
 /********************************************************************************************************************/
 )
 
@@ -5224,6 +5922,258 @@ TRUE,
 "PQoS,Status"
 /********************************************************************************************************************/
 )
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Log_PrintModulation(const RMH_Handle handle, const char* filename),
+
+/* API Name */
+RMH_Log_PrintModulation,
+
+/* Description */
+"Print a summary of the sub carrier modulation bitloading information.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,
+        "The RMH handle as returned by RMH_Initialize. NULL is valid for this API."),
+    INPUT_PARAM(filename,       const char *,
+        "The file name where to write the status. If this is NULL the status will be written to RMH_LOG_MESSAGE")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Status"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_Request(const RMH_Handle handle, const uint32_t channelNum, const uint32_t sourceNodeId, const uint32_t destinationNodeMask, const RMH_ACAType type),
+
+/* API Name */
+RMH_ACA_Request,
+
+/* Description */
+"Instruct the driver to perform a new ACA operation [mocaIfAcaInitiate]. Returns RMH_SUCCESS if the ACA operation was started successfully. This call will fail if an ACA operation is already in progress.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,                 const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(channelNum,             const uint32_t,         "The channel number to perform the ACA on [mocaIfAcaChannel]"),
+    INPUT_PARAM(sourceNodeId,           const uint32_t,         "The Node ID of the source node for the ACA. [mocaIfAcaNodeID]"),
+    INPUT_PARAM(destinationNodeMask,    const uint32_t,         "The bitmask of the destination nodes for the ACA [mocaIfAcaReportNodeMask]. To include a given node in the ACA use 'destinationNodeMask |= (1 << nodeId)"),
+    INPUT_PARAM(type,                   const RMH_ACAType,     "The type of ACA to perform, either EVM or Quiet. [mocaIfAcaType]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_GetChannel(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_ACA_GetChannel,
+
+/* Description */
+"Return the channel number of the last requested ACA. [mocaIfAcaNodeID]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The channel number of the last requested ACA. [mocaIfAcaNodeID]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_GetSourceNodeId(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_ACA_GetSourceNodeId,
+
+/* Description */
+"Return the Node ID of the source node for the last requested ACA. [mocaIfAcaNodeID]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The Node ID of the source node for the last requested ACA. [mocaIfAcaNodeID]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_GetDestinationNodeMask(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_ACA_GetDestinationNodeMask,
+
+/* Description */
+"Return the bitmask of the destination nodes for the last requested ACA. [mocaIfAcaReportNodeMask]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The bitmask of the destination nodes for the last requested ACA. [mocaIfAcaReportNodeMask]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_GetType(const RMH_Handle handle, RMH_ACAType* response),
+
+/* API Name */
+RMH_ACA_GetType,
+
+/* Description */
+"Return the type of the last requested ACA operation",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The type of the last requested ACA operation [mocaIfAcaType]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_GetStatus(const RMH_Handle handle, RMH_ACAStatus* response),
+
+/* API Name */
+RMH_ACA_GetStatus,
+
+/* Description */
+"Return the current status of the last requested ACA operation",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      RMH_ACAStatus*,         "The current status of the previously started ACA operation [mocaIfAcaStatus]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_GetTotalRxPower(const RMH_Handle handle, int32_t* response),
+
+/* API Name */
+RMH_ACA_GetTotalRxPower,
+
+/* Description */
+"Return the total power from the last completed ACA operation. This call will fail if an ACA operation is already in progress",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      int32_t*,               "The total power from the last completed ACA operation [mocaIfAcaTotalRxPower]")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ACA_GetPowerProfile(const RMH_Handle handle, uint8_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed),
+
+
+/* API Name */
+RMH_ACA_GetPowerProfile,
+
+/* Description */
+"Return the total power from the last completed ACA operation. This call will fail if an ACA operation already is in progress",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,           "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(responseArray,      uint8_t*,                   "The ACA power profile. This is a binary string array with 1 byte for each subcarrier. [mocaIfAcaPowerProfile]"),
+    INPUT_PARAM(responseArraySize,  const size_t,               "The size of <responseArray>"),
+    OUTPUT_PARAM(responseArrayUsed, size_t*,                    "The number of entries in the response array which have valid data")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"ACA"
+/********************************************************************************************************************/
+)
+
 
 
 #ifdef __cplusplus

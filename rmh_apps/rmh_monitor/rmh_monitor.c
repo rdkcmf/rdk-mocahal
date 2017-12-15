@@ -125,6 +125,7 @@ int main(const int argc, const char *argv[])
 
     /* Setup all the callbacks we're interested in...pretty much everything */
     if (RMH_SetEventCallbacks(app->rmh, RMH_EVENT_LINK_STATUS_CHANGED | \
+                                        RMH_EVENT_MOCA_RESET | \
                                         RMH_EVENT_MOCA_VERSION_CHANGED | \
                                         RMH_EVENT_ADMISSION_STATUS_CHANGED | \
                                         RMH_EVENT_NODE_JOINED | \

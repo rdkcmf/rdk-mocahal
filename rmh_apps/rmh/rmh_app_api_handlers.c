@@ -266,8 +266,43 @@ RMH_Result RMHApp_ReadString(RMHApp *app, char *buf, const uint32_t bufSize) {
     return RMH_FAILURE;
 }
 
+static
+RMH_Result RMHApp_ReadACAType(RMHApp *app, RMH_ACAType *value) {
+    char input[16];
+    if (ReadLine("Enter your choice (EVM,QUIET or 0,1): ", app, input, sizeof(input))) {
+        if ((strcmp(input, "0") == 0) || (strcasecmp(input, "RMH_ACA_EVM") == 0) || (strcasecmp(input, "EVM") == 0)) {
+            *value=RMH_ACA_TYPE_EVM;
+            return RMH_SUCCESS;
+        }
+        else if ((strcmp(input, "1") == 0) || (strcasecmp(input, "RMH_ACA_QUIET") == 0) || (strcasecmp(input, "QUIET") == 0)) {
+            *value=RMH_ACA_TYPE_QUIET;
+            return RMH_SUCCESS;
+        }
+    }
+    RMH_PrintErr("Bad input. Please use only EVM,QUIET or 0,1\n");
+    return RMH_FAILURE;
+}
 
-
+static
+RMH_Result RMHApp_ReadPERMode(RMHApp *app, RMH_PERMode *value) {
+    char input[16];
+    if (ReadLine("Enter your choice (LEGACY,NPER,VLPER or 0,1,2): ", app, input, sizeof(input))) {
+        if ((strcmp(input, "0") == 0) || (strcasecmp(input, "RMH_PER_MODE_LEGACY") == 0) || (strcasecmp(input, "LEGACY") == 0)) {
+            *value=RMH_PER_MODE_LEGACY;
+            return RMH_SUCCESS;
+        }
+        else if ((strcmp(input, "1") == 0) || (strcasecmp(input, "RMH_PER_MODE_NOMINAL") == 0) || (strcasecmp(input, "NPER") == 0)) {
+            *value=RMH_PER_MODE_NOMINAL;
+            return RMH_SUCCESS;
+        }
+        else if ((strcmp(input, "2") == 0) || (strcasecmp(input, "RMH_PER_MODE_VERY_LOW") == 0) || (strcasecmp(input, "VLPER") == 0)) {
+            *value=RMH_PER_MODE_VERY_LOW;
+            return RMH_SUCCESS;
+        }
+    }
+    RMH_PrintErr("Bad input. Please use only LEGACY,NPER,VLPER or 0,1,2\n");
+    return RMH_FAILURE;
+}
 
 
 /***********************************************************
@@ -406,6 +441,30 @@ RMH_Result RMHApp__OUT_STRING(RMHApp *app, RMH_Result (*api)(const RMH_Handle ha
     RMH_Result ret = api(app->rmh, response, sizeof(response));
     if (ret == RMH_SUCCESS) {
         RMH_PrintMsg("%s\n", response);
+    }
+    return ret;
+}
+
+static
+RMH_Result RMHApp__OUT_UINT8_ARRAY(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, uint8_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed)) {
+    uint8_t responseBuf[1024];
+    size_t responseBufUsed;
+    int i,j;
+
+    RMH_Result ret = api(app->rmh, responseBuf, sizeof(responseBuf)/sizeof(responseBuf[0]), &responseBufUsed);
+    if (ret == RMH_SUCCESS) {
+        for (i=0; i < responseBufUsed;) {
+            RMH_PrintMsg("[%04u] ", i);
+            for (j=0; j < 16 && i < responseBufUsed; j++,i++) {
+                if (j == 7) {
+                    RMH_PrintMsg("%02u   ", responseBuf[i]);
+                }
+                else {
+                    RMH_PrintMsg("%02u ", responseBuf[i]);
+                }
+            }
+            RMH_PrintMsg("\n");
+        }
     }
     return ret;
 }
@@ -769,6 +828,185 @@ RMH_Result RMHApp__SET_TABOO(RMHApp *app, RMH_Result (*api)(const RMH_Handle han
     return ret;
 }
 
+static
+RMH_Result RMHApp__OUT_ACA_TYPE(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, RMH_ACAType* response)) {
+    RMH_ACAType response=0;
+    RMH_Result ret = api(app->rmh, &response);
+    if (ret == RMH_SUCCESS) {
+        RMH_PrintMsg("%s\n", RMH_ACATypeToString(response));
+    }
+    return ret;
+}
+
+static
+RMH_Result RMHApp__OUT_ACA_STATUS(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, RMH_ACAStatus* response)) {
+    RMH_ACAStatus response;
+    RMH_Result ret = api(app->rmh, &response);
+    if (ret == RMH_SUCCESS) {
+        RMH_PrintMsg("%s\n", RMH_ACAStatusToString(response));
+    }
+    return ret;
+}
+
+static
+RMH_Result RMHApp__REQUEST_ACA(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, const uint32_t channelNum, const uint32_t sourceNodeId, const uint32_t destinationNodeMask, const RMH_ACAType type)) {
+    uint32_t channelNum;
+    uint32_t sourceNodeId;
+    uint32_t destinationNodeMask;
+    RMH_ACAType type;
+    RMH_Result ret;
+
+    ret=RMHApp_ReadUint32(app, &channelNum);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading channel number\n");
+        return ret;
+    }
+
+    ret=RMHApp_ReadUint32(app, &sourceNodeId);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading source node id\n");
+        return ret;
+    }
+
+    ret=RMHApp_ReadUint32Hex(app, &destinationNodeMask);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading destination node mask\n");
+        return ret;
+    }
+
+    ret=RMHApp_ReadACAType(app, &type);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading ACA type\n");
+        return ret;
+    }
+
+    ret = api(app->rmh, channelNum, sourceNodeId, destinationNodeMask, type);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed in ACA request\n");
+        return ret;
+    }
+
+    RMH_ACAStatus status;
+    ret = RMH_ACA_GetStatus(app->rmh, &status);
+    if (ret == RMH_SUCCESS) {
+        RMH_PrintMsg("RMH_ACA_GetStatus: %s\n", RMH_ACAStatusToString(status));
+    }
+
+    int32_t txPower;
+    ret = RMH_ACA_GetTotalRxPower(app->rmh, &txPower);
+    if (ret == RMH_SUCCESS) {
+        RMH_PrintMsg("RMH_ACA_GetTotalRxPower: %d\n", txPower);
+    }
+
+    RMH_PrintMsg("RMH_ACA_GetPowerProfile:\n");
+    RMHApp__OUT_UINT8_ARRAY(app, RMH_ACA_GetPowerProfile);
+    return RMH_SUCCESS;
+ }
+
+static
+RMH_Result RMHApp__MoCA_RESET(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, const uint32_t nodeMask, const uint32_t sleepTime)) {
+    uint32_t nodeMask;
+    uint32_t sleepTime;
+    RMH_Result ret;
+
+    ret=RMHApp_ReadUint32Hex(app, &nodeMask);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading node mask\n");
+        return ret;
+    }
+
+    ret=RMHApp_ReadUint32(app, &sleepTime);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading sleep time\n");
+        return ret;
+    }
+
+    ret = api(app->rmh, nodeMask, sleepTime);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed in reset request\n");
+        return ret;
+    }
+
+    return ret;
+}
+
+static
+RMH_Result RMHApp__OUT_RESET_REASON(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, RMH_MoCAResetReason* response)) {
+    RMH_MoCAResetReason response;
+    RMH_Result ret = api(app->rmh, &response);
+    if (ret == RMH_SUCCESS) {
+        RMH_PrintMsg("%s\n", RMH_MoCAResetReasonToString(response));
+    }
+    return ret;
+}
+
+static
+void PrintModulation(RMHApp *app, uint32_t start, uint32_t end, RMH_SubcarrierProfile* array, size_t arraySize) {
+    int i,j;
+    int offset = start < end ? 1 : -1;
+    for (i=start; i < arraySize;) {
+        RMH_PrintMsg("[%3u-%3u] ", i, i+(31*offset));
+        for (j=0; j<32 && i < arraySize; j++,i+=offset) {
+            RMH_PrintMsg("%X", array[i]);
+            if (i == end) {
+                RMH_PrintMsg("\n");
+                return;
+            }
+        }
+        RMH_PrintMsg("\n");
+    }
+}
+
+static
+RMH_Result RMHApp__OUT_MODULATION(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed)) {
+    uint32_t nodeId;
+    RMH_SubcarrierProfile responseBuf[512];
+    size_t responseBufUsed;
+    RMH_Result ret;
+    RMH_MoCAVersion response;
+    RMH_PERMode perMode;
+
+    ret=RMHApp_ReadUint32(app, &nodeId);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading node Id\n");
+        return ret;
+    }
+
+    ret=RMHApp_ReadPERMode(app, &perMode);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("Failed reading channel type\n");
+        return ret;
+    }
+
+    ret = api(app->rmh, nodeId, perMode, responseBuf, sizeof(responseBuf)/sizeof(responseBuf[0]), &responseBufUsed);
+    if (ret != RMH_SUCCESS) {
+        return ret;
+    }
+
+    ret = RMH_RemoteNode_GetActiveMoCAVersion(app->rmh, nodeId, &response);
+    if (ret != RMH_SUCCESS) {
+        return ret;
+    }
+    switch (response) {
+    case RMH_MOCA_VERSION_10:
+    case RMH_MOCA_VERSION_11:
+        PrintModulation(app, 127, 0, responseBuf, responseBufUsed);
+        PrintModulation(app, 255, 128, responseBuf, responseBufUsed);
+        break;
+    case RMH_MOCA_VERSION_20:
+        PrintModulation(app, 256, 511, responseBuf, responseBufUsed);
+        PrintModulation(app, 0, 255, responseBuf, responseBufUsed);
+        break;
+    default:
+        RMH_PrintErr("Unknown MoCA version.\n");
+        break;
+    }
+
+    return ret;
+}
+
+
+
 /***********************************************************
  * Registration Functions
  ***********************************************************/
@@ -812,6 +1050,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetMaxPacketAggregation,                       "");
     SET_API_HANDLER(RMHApp__IN_UINT32,                          RMH_Self_SetMaxPacketAggregation,                       "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetMaxFrameSize,                               "");
+    SET_API_HANDLER(RMHApp__IN_UINT32,                          RMH_Self_SetMaxFrameSize,                               "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_HEX,                     RMH_Self_GetFrequencyMask,                              "");
     SET_API_HANDLER(RMHApp__IN_UINT32_HEX,                      RMH_Self_SetFrequencyMask,                              "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetLowBandwidthLimit,                          "");
@@ -836,7 +1075,14 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetPrivacyEnabled,                             "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetPrivacyEnabled,                             "");
     SET_API_HANDLER(RMHApp__OUT_STRING,                         RMH_Self_GetPrivacyPassword,                            "");
+    SET_API_HANDLER(RMHApp__OUT_STRING,                         RMH_Self_GetPrivacyMACManagementKey,                    "");
     SET_API_HANDLER(RMHApp__IN_STRING,                          RMH_Self_SetPrivacyPassword,                            "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetMaxAllocationElements,                      "");
+    SET_API_HANDLER(RMHApp__IN_INT32,                           RMH_Self_SetPrimaryChannelOffset,                       "");
+    SET_API_HANDLER(RMHApp__OUT_INT32,                          RMH_Self_GetPrimaryChannelOffset,                       "");
+    SET_API_HANDLER(RMHApp__IN_INT32,                           RMH_Self_SetSecondaryChannelOffset,                     "");
+    SET_API_HANDLER(RMHApp__OUT_INT32,                          RMH_Self_GetSecondaryChannelOffset,                     "");
+    SET_API_HANDLER(RMHApp__OUT_RESET_REASON,                   RMH_Self_GetLastResetReason,                            "");
 
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Interface_GetEnabled,                               "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Interface_SetEnabled,                               "");
@@ -845,7 +1091,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__IN_MAC,                             RMH_Interface_SetMac,                                   "");
 
     SET_API_HANDLER(RMHApp__OUT_POWER_MODE,                     RMH_Power_GetMode,                                      "");
-    SET_API_HANDLER(RMHApp__OUT_UINT32_HEX,                     RMH_Power_GetSupportedModes,                            "");
+    SET_API_HANDLER(RMHApp__OUT_POWER_MODE,                     RMH_Power_GetSupportedModes,                            "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Power_GetTxPowerControlEnabled,                     "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Power_SetTxPowerControlEnabled,                     "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Power_GetTxBeaconPowerReductionEnabled,             "");
@@ -890,6 +1136,8 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_UINT32_ARRAY,                   RMH_Stats_GetTxPacketAggregation,                       "");
     SET_API_HANDLER(RMHApp__HANDLE_ONLY,                        RMH_Stats_Reset,                                        "");
 
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_PQOS_GetMaxIngressFlows,                            "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_PQOS_GetMaxEgressFlows,                             "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_PQoS_GetNumIngressFlows,                            "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_PQoS_GetNumEgressFlows,                             "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_PQoS_GetEgressBandwidth,                            "");
@@ -926,11 +1174,14 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_MOCA_VERSION,                   RMH_Network_GetMoCAVersion,                             "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Network_GetMixedMode,                               "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetLinkUptime,                              "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetResetCount,                              "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetLinkDownCount,                           "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetRFChannelFreq,                           "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetPrimaryChannelFreq,                      "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetSecondaryChannelFreq,                    "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetTxMapPhyRate,                            "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetTxBroadcastPhyRate,                      "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetTxGCDPhyRate,                            "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Network_GetTxGcdPowerReduction,                     "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetTxUnicastPhyRate,                        "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetTxVLPER,                                 "");
@@ -962,6 +1213,13 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetTxPowerReduction,                     "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetTxUnicastPhyRate,                     "");
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetTxPackets,                            "");
+    SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetRxUnicastSubcarrierModulation,        "");
+    SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetTxUnicastSubcarrierModulation,        "");
+    SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation, "");
+    SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation, "");
+    SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetRxBroadcastSubcarrierModulation,      "");
+    SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetTxBroadcastSubcarrierModulation,      "");
+    SET_API_HANDLER(RMHApp__MoCA_RESET,                         RMH_RemoteNode_Reset,                                   "");
 
     SET_API_HANDLER(RMHApp__OUT_LOGLEVEL,                       RMH_Log_GetAPILevel,                                    "");
     SET_API_HANDLER(RMHApp__IN_LOGLEVEL,                        RMH_Log_SetAPILevel,                                    "");
@@ -971,6 +1229,17 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__IN_STRING,                          RMH_Log_SetDriverFilename,                              "");
     SET_API_HANDLER(RMHApp__PRINT_STATUS,                       RMH_Log_PrintStatus,                                    "status");
     SET_API_HANDLER(RMHApp__PRINT_STATUS,                       RMH_Log_PrintFlows,                                     "flows");
+    SET_API_HANDLER(RMHApp__PRINT_STATUS,                       RMH_Log_PrintModulation,                                "modulation");
+
+    SET_API_HANDLER(RMHApp__REQUEST_ACA,                        RMH_ACA_Request,                                        "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_ACA_GetChannel,                                     "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_ACA_GetSourceNodeId,                                "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_ACA_GetDestinationNodeMask,                         "");
+    SET_API_HANDLER(RMHApp__OUT_ACA_TYPE,                       RMH_ACA_GetType,                                        "");
+    SET_API_HANDLER(RMHApp__OUT_ACA_STATUS,                     RMH_ACA_GetStatus,                                      "");
+    SET_API_HANDLER(RMHApp__OUT_INT32,                          RMH_ACA_GetTotalRxPower,                                "");
+    SET_API_HANDLER(RMHApp__OUT_UINT8_ARRAY,                    RMH_ACA_GetPowerProfile,                                "");
+
 
     SET_API_HANDLER(RMHApp__IN_RMH_ENUM,                        RMH_ResultToString,                                     "");
     /* Local APIs */

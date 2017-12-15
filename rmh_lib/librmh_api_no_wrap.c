@@ -74,6 +74,11 @@ __attribute__((visibility("hidden"))) const char * const RMH_BandStr[] = { ENUM_
 __attribute__((visibility("hidden"))) const char * const RMH_MoCAVersionStr[] = { ENUM_RMH_MoCAVersion };
 __attribute__((visibility("hidden"))) const char * const RMH_LogLevelStr[] = { ENUM_RMH_LogLevel };
 __attribute__((visibility("hidden"))) const char * const RMH_EventStr[] = { ENUM_RMH_Event };
+__attribute__((visibility("hidden"))) const char * const RMH_ACATypeStr[] = { ENUM_RMH_ACAType };
+__attribute__((visibility("hidden"))) const char * const RMH_ACAStatusStr[] = { ENUM_RMH_ACAStatus };
+__attribute__((visibility("hidden"))) const char * const RMH_MoCAResetReasonStr[] = { ENUM_RMH_MoCAResetReason };
+__attribute__((visibility("hidden"))) const char * const RMH_SubcarrierProfileStr[] = { ENUM_RMH_SubcarrierProfile };
+__attribute__((visibility("hidden"))) const char * const RMH_PERModeStr[] = { ENUM_RMH_PERMode };
 
 const char* const RMH_ResultToString(const RMH_Result value) {
     return RMH_ResultStr[value];
@@ -90,6 +95,28 @@ const char* const RMH_AdmissionStatusToString(const RMH_AdmissionStatus value) {
 const char* const RMH_BandToString(const RMH_Band value) {
     return RMH_BandStr[value];
 }
+
+const char* const RMH_ACATypeToString(const RMH_ACAType value) {
+    return RMH_ACATypeStr[value];
+}
+
+const char* const RMH_ACAStatusToString(const RMH_ACAStatus value) {
+    return RMH_ACAStatusStr[value];
+}
+
+const char* const RMH_MoCAResetReasonToString(const RMH_MoCAResetReason value) {
+    return RMH_MoCAResetReasonStr[value];
+}
+
+const char* const RMH_SubcarrierProfileToString(const RMH_SubcarrierProfile value) {
+    return RMH_SubcarrierProfileStr[value];
+}
+
+const char* const RMH_PERModeToString(const RMH_PERMode value) {
+    return RMH_PERModeStr[value];
+}
+
+
 
 const char* const RMH_MoCAVersionToString(const RMH_MoCAVersion value) {
     switch (value) {

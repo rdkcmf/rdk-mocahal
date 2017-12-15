@@ -45,7 +45,6 @@
 static inline
 bool RMHMonitor_Event_JoinNode(RMHMonitor *app, struct timeval *time, const uint32_t nodeId) {
     char printBuff[32];
-    float txPower, rxPower, rxSNR;
     RMH_Result ret;
 
     /* If the link is down do nothing */
@@ -340,6 +339,8 @@ void RMHMonitor_Event_PrintFull(RMHMonitor *app, struct timeval *time) {
         RMH_PrintMsg("==============================================================================================================================\n");
         RMH_Log_PrintStats(app->rmh, NULL);
         RMH_PrintMsg("==============================================================================================================================\n");
+        RMH_Log_PrintModulation(app->rmh, NULL);
+        RMH_PrintMsg("==============================================================================================================================\n");
         RMH_Log_PrintFlows(app->rmh, NULL);
         RMH_PrintMsg("==============================================================================================================================\n");
     }
@@ -422,6 +423,9 @@ void RMHMonitor_Event_Thread(void * context) {
             case RMH_EVENT_LINK_STATUS_CHANGED:
                 app->appPrefix="[**LINK**] ";
                 printStatus|=RMHMonitor_Event_LinkStatusChanged(app, &cbE->eventTime, cbE->eventData.RMH_EVENT_LINK_STATUS_CHANGED.status);
+                break;
+            case RMH_EVENT_MOCA_RESET:
+                RMH_PrintMsgT(&cbE->eventTime, "[*RESET* ] MoCA Reset triggered - %s\n", RMH_MoCAResetReasonToString(cbE->eventData.RMH_EVENT_MOCA_RESET.reason));
                 break;
             case RMH_EVENT_MOCA_VERSION_CHANGED:
                 app->appPrefix="[MOCA VER] ";
