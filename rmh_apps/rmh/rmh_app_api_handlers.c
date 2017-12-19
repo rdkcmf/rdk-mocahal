@@ -1075,8 +1075,10 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetPrivacyEnabled,                             "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetPrivacyEnabled,                             "");
     SET_API_HANDLER(RMHApp__OUT_STRING,                         RMH_Self_GetPrivacyPassword,                            "");
-    SET_API_HANDLER(RMHApp__OUT_STRING,                         RMH_Self_GetPrivacyMACManagementKey,                    "");
     SET_API_HANDLER(RMHApp__IN_STRING,                          RMH_Self_SetPrivacyPassword,                            "");
+    SET_API_HANDLER(RMHApp__OUT_STRING,                         RMH_Self_GetPrivacyMACManagementKey,                    "");
+    SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetRDKInteroperabilityIFGEnabled,              "");
+    SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetRDKInteroperabilityIFGEnabled,              "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetMaxAllocationElements,                      "");
     SET_API_HANDLER(RMHApp__IN_INT32,                           RMH_Self_SetPrimaryChannelOffset,                       "");
     SET_API_HANDLER(RMHApp__OUT_INT32,                          RMH_Self_GetPrimaryChannelOffset,                       "");

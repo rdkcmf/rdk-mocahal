@@ -169,6 +169,11 @@ RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
     BRMH_RETURN_IF_FAILED(RMH_Self_SetPreferredNCEnabled(handle, RMH_START_DEFAULT_PREFERRED_NC));
 #endif
 
+#ifdef RMH_START_ENABLE_RDK_IFG
+    RMH_PrintMsg("Setting RMH_Self_SetRDKInteroperabilityIFGEnabled: %s\n", RMH_START_ENABLE_RDK_IFG ? "TRUE" : "FALSE");
+    BRMH_RETURN_IF_FAILED(RMH_Self_SetRDKInteroperabilityIFGEnabled(handle, RMH_START_ENABLE_RDK_IFG));
+#endif
+
 #if RMH_START_SET_MAC_FROM_PROC
     if (RMH_START_SET_MAC_FROM_PROC) {
         char ethName[18];
@@ -615,6 +620,7 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStatus(const RMH_Handle handle, const char
     PRINT_STATUS_BOOL(RMH_Self_GetTurboEnabled);
     PRINT_STATUS_BOOL(RMH_Self_GetBondingEnabled);
     PRINT_STATUS_BOOL(RMH_Self_GetPrivacyEnabled);
+    PRINT_STATUS_BOOL(RMH_Self_GetRDKInteroperabilityIFGEnabled);
     PRINT_STATUS_STRING(RMH_Self_GetPrivacyMACManagementKey);
     PRINT_STATUS_LOG_LEVEL(RMH_Log_GetDriverLevel);
     PRINT_STATUS_STRING(RMH_Log_GetDriverFilename);

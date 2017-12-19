@@ -1695,7 +1695,7 @@ PARAMETERS(
 TRUE,
 
 /* Tags */
-"Self,Privacy"
+"Configuration [Get],Self,Privacy"
 /********************************************************************************************************************/
 )
 
@@ -1723,7 +1723,7 @@ PARAMETERS(
 TRUE,
 
 /* Tags */
-"Configuration [Set],Privacy"
+"Configuration [Set],Self,Privacy"
 /********************************************************************************************************************/
 )
 
@@ -1744,33 +1744,6 @@ RMH_Self_GetPrivacyPassword,
 PARAMETERS(
     INPUT_PARAM(handle,             const RMH_Handle,   "The RMH handle as returned by RMH_Initialize"),
     OUTPUT_PARAM(responseBuf,       char*,              "A buffer where the MoCA password will be written"),
-    INPUT_PARAM(responseBufSize,    const size_t,       "The size in bytes of the buffer <responseBuf>")
-),
-
-/* Wrap API */
-TRUE,
-
-/* Tags */
-"Self,Privacy"
-/********************************************************************************************************************/
-)
-
-
-RMH_API_IMPLEMENTATION_SOC_ONLY(
-/********************************************************************************************************************/
-/* API Declaration */
-RMH_Result RMH_Self_GetPrivacyMACManagementKey(RMH_Handle handle, char* responseBuf, const size_t responseBufSize),
-
-/* API Name */
-RMH_Self_GetPrivacyMACManagementKey,
-
-/* Description */
-"Get the SHA1 hash of the MoCA password as an ASCII string. [mocaIfPasswordHash]",
-
-/* Parameters */
-PARAMETERS(
-    INPUT_PARAM(handle,             const RMH_Handle,   "The RMH handle as returned by RMH_Initialize"),
-    OUTPUT_PARAM(responseBuf,       char*,              "A buffer where the MoCA managment key will be written"),
     INPUT_PARAM(responseBufSize,    const size_t,       "The size in bytes of the buffer <responseBuf>")
 ),
 
@@ -1810,6 +1783,89 @@ TRUE,
 /********************************************************************************************************************/
 )
 
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetPrivacyMACManagementKey(RMH_Handle handle, char* responseBuf, const size_t responseBufSize),
+
+/* API Name */
+RMH_Self_GetPrivacyMACManagementKey,
+
+/* Description */
+"Get the SHA1 hash of the MoCA password as an ASCII string. [mocaIfPasswordHash]",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,   "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(responseBuf,       char*,              "A buffer where the MoCA managment key will be written"),
+    INPUT_PARAM(responseBufSize,    const size_t,       "The size in bytes of the buffer <responseBuf>")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Self,Privacy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetRDKInteroperabilityIFGEnabled(const RMH_Handle handle, bool* response),
+
+/* API Name */
+RMH_Self_GetRDKInteroperabilityIFGEnabled,
+
+/* Description */
+"Return if the RDK specific inter-frame gap of 10us is enabled on this device. This should be enabled on all MoCA 2.0 "
+"devices that would become the NC to ensure endure compatibility with all RDK vendors.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      bool*,                  "Set to 'true' if RDK IFG of 10us is enabled. Otherwise set to 'false'.")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get],Self"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_SetRDKInteroperabilityIFGEnabled(const RMH_Handle handle, const bool value),
+
+/* API Name */
+RMH_Self_SetRDKInteroperabilityIFGEnabled,
+
+/* Description */
+"Enable or disable the RDK specific inter-frame gap of 10us. This setting is needed by all MoCA 2.0 devices that would become "
+"the NC to ensure endure compatibility with all RDK vendors.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(value,          const bool,             "Pass 'true' to enable RDK IFG of 10us. Otherwise pass to 'false'.")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set],Self"
+/********************************************************************************************************************/
+)
 
 
 

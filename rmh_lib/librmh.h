@@ -39,7 +39,10 @@ void RMH_Print(const RMH_Handle handle, const RMH_LogLevel level, const char *fi
 #define BRMH_RETURN_IF(expr, ret) { if (expr) { RMH_PrintErr("'" #expr "' is true!\n"); return ret; } }
 #define BRMH_RETURN_IF_FAILED(cmd) { \
     RMH_Result ret = cmd; \
-    if (ret != RMH_SUCCESS) { \
+    if (ret == RMH_NOT_SUPPORTED) { \
+        RMH_PrintWrn("'" #cmd "' is not supported by this device\n"); \
+    } \
+    else if (ret != RMH_SUCCESS) { \
         RMH_PrintDbg("'" #cmd "' failed with error %s!\n", RMH_ResultToString(ret)); \
         return ret; \
     } \
