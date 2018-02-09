@@ -1066,6 +1066,10 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetQAM256Enabled,                              "");
     SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetQAM256TargetPhyRate,                        "");
     SET_API_HANDLER(RMHApp__IN_UINT32,                          RMH_Self_SetQAM256TargetPhyRate,                        "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetPrimaryChannelTargetPhyRate,                "");
+    SET_API_HANDLER(RMHApp__IN_UINT32,                          RMH_Self_SetPrimaryChannelTargetPhyRate,                "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32,                         RMH_Self_GetSecondaryChannelTargetPhyRate,              "");
+    SET_API_HANDLER(RMHApp__IN_UINT32,                          RMH_Self_SetSecondaryChannelTargetPhyRate,              "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetTurboEnabled,                               "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetTurboEnabled,                               "");
     SET_API_HANDLER(RMHApp__GET_TABOO,                          RMH_Self_GetTabooChannels,                              "");

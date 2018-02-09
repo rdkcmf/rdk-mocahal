@@ -1465,7 +1465,7 @@ RMH_Result RMH_Self_GetQAM256TargetPhyRate(const RMH_Handle handle, uint32_t* re
 RMH_Self_GetQAM256TargetPhyRate,
 
 /* Description */
-"Get the target PHY rate in Mbps.",
+"Get the target PHY rate for normal transmissions to MoCA 1.1 nodes when they support qam256",
 
 /* Parameters */
 PARAMETERS(
@@ -1492,9 +1492,114 @@ RMH_Result RMH_Self_SetQAM256TargetPhyRate(const RMH_Handle handle, const uint32
 RMH_Self_SetQAM256TargetPhyRate,
 
 /* Description */
-"Set the target PHY rate in Mbps."
-"\n**NOTE: Setting this value may trigger a restart of the MoCA driver and cause the device to temporarily leave the network.",
+"Set the target PHY rate for normal transmissions to MoCA 1.1 nodes when they support qam256",
 
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(value,          const uint32_t,         "The target PHY rate in Mbps")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set],QAM,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetPrimaryChannelTargetPhyRate(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Self_GetPrimaryChannelTargetPhyRate,
+
+/* Description */
+"Get the target PHY rate for unicast transmissions on the primary channel.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The target PHY rate in Mbps")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Self,QAM,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_SetPrimaryChannelTargetPhyRate(const RMH_Handle handle, const uint32_t value),
+
+/* API Name */
+RMH_Self_SetPrimaryChannelTargetPhyRate,
+
+/* Description */
+"Set the target PHY rate for unicast transmissions on the primary channel.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(value,          const uint32_t,         "The target PHY rate in Mbps")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set],QAM,Phy"
+/********************************************************************************************************************/
+)
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_GetSecondaryChannelTargetPhyRate(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Self_GetSecondaryChannelTargetPhyRate,
+
+/* Description */
+"Get the target PHY rate for unicast transmissions on the secondary channel.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The target PHY rate in Mbps")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Self,QAM,Phy"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_SetSecondaryChannelTargetPhyRate(const RMH_Handle handle, const uint32_t value),
+
+/* API Name */
+RMH_Self_SetSecondaryChannelTargetPhyRate,
+
+/* Description */
+"Set the target PHY rate for unicast transmissions on the secondary channel.",
 
 /* Parameters */
 PARAMETERS(
