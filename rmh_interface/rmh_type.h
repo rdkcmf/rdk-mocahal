@@ -50,10 +50,10 @@ typedef uint8_t RMH_MacAddress_t[6];
 typedef enum RMH_Result { ENUM_RMH_Result } RMH_Result;
 
 #define ENUM_RMH_PowerMode \
-    AS(RMH_POWER_MODE_0,                            1u << 0) \
-    AS(RMH_POWER_MODE_1,                            1u << 1) \
-    AS(RMH_POWER_MODE_2,                            1u << 2) \
-    AS(RMH_POWER_MODE_3,                            1u << 3)
+    AS(RMH_POWER_MODE_M0_ACTIVE,                    1u << 0) \
+    AS(RMH_POWER_MODE_M1_IDLE,                      1u << 1) \
+    AS(RMH_POWER_MODE_M2_STANDBY,                   1u << 2) \
+    AS(RMH_POWER_MODE_M3_SLEEP,                     1u << 3)
 typedef enum RMH_PowerMode { ENUM_RMH_PowerMode } RMH_PowerMode;
 
 #define ENUM_RMH_PERMode \
