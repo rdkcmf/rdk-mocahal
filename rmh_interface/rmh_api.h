@@ -19,6 +19,21 @@
 #ifndef RMH_API_H
 #define RMH_API_H
 
+/**
+ * @defgroup MOCAHAL  MoCA HAL
+ *
+ * MoCA HAL is an abstraction layer, implemented for interacting with MoCA driver.
+ * MoCA HAL API's functionality should be implemented by OEMs.
+ * moca_hal.c file provides the function call prototypes and structure definitions used for
+ * the RDK MoCA hardware abstraction layer.
+ *
+ * @defgroup MOCAHAL_GENERIC_API MoCA HAL Generic APIs
+ * @ingroup MOCAHAL
+ *
+ * @defgroup MOCAHAL_SOC_API MoCA HAL SoC APIs
+ * @ingroup MOCAHAL
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6366,7 +6381,2268 @@ TRUE,
 /********************************************************************************************************************/
 )
 
+#ifdef DOX_MOCA
+/**
+ * @addtogroup MOCAHAL_GENERIC_API
+ * @{
+ */
 
+ /**
+ * @brief Initialize the RMH library and return a handle to the instance.
+ *
+ * This handle will be used in all future communication with the RMH library.
+ * This function will fail if the MoCA driver is not properly installed or is not able to operate.
+ * Multiple simultaneous instances of RMH_Initialize are supported in single and multiprocess environments.
+ *
+ * @param[in] eventCB      A pointer to a function which will handle any callbacks from the RMH MoCA library
+ *                         A value of NULL is permitted if you do not wish to receive callbacks.
+ * @param[in] userContext  A pointer to some data that will be passed back with each callback.
+ *                         A value of NULL is permitted if the client requires no context during callbacks.
+ */
+RMH_Handle RMH_Initialize(const RMH_EventCallback eventCB, void * userContext);
+
+/**
+ * @brief Destroy the instance of RMH library which was created by RMH_Initialize.
+ *
+ * @param[in] handle  The RMH handle as returned by RMH_Initialize.
+ */
+RMH_Result RMH_Destroy(RMH_Handle handle);
+
+/**
+ * @brief Set the list of callbacks you wish to receive.
+ *
+ * For each callback a call will be made to eventCB which is provided in the call to RMH_Initialize.
+ * By default all callbacks are disabled.
+ * Any subsequent calls to this API will overwrite previous calls.
+ * For example, if you originally set value to 'RMH_API_PRINT' and later set to LINK_STATUS_CHANGED | MOCA_VERSION_CHANGED'
+ * you will stop receiving callbacks for 'RMH_API_PRINT'.
+ *
+ * @param[in] handle  The RMH handle as returned by RMH_Initialize.
+ * @param[in] value   A bitmask list of RMH_Event indicating the callbacks to be received.
+ */
+RMH_Result RMH_SetEventCallbacks(RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief Get the list of events for which the client has registered.
+ *
+ * @param[in]  handle      The RMH handle as returned by RMH_Initialize.
+ * @param[out] response    A bitmask list of RMH_Event indicating the currently enabled callbacks.
+ */
+RMH_Result RMH_GetEventCallbacks(RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return a list of all APIs which are part of RMH.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[out] apiList    Output list of APIs.
+ */
+RMH_Result RMH_GetAllAPIs(const RMH_Handle handle, RMH_APIList** apiList);
+
+/**
+ * @brief Return a list of all RMH APIs which are unimplemented by the SoC library.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[out] apiList    Output list of APIs.
+ */
+RMH_Result RMH_GetUnimplementedAPIs(const RMH_Handle handle, RMH_APIList** apiList);
+
+/**
+ * @brief Return the list of all RMH APIs grouped into lists by their tags.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[out] apiTags    Output list of Tags and APIs which belong to them.
+ */
+RMH_Result RMH_GetAPITags(const RMH_Handle handle, RMH_APITagList** apiTags);
+
+/**
+ * @brief Convert RMH_Result to a string.
+ *
+ * @param[in]  value  Value to be printed as a string.
+ */
+const char* const RMH_ResultToString(const RMH_Result value);
+
+/**
+ * @brief Convert RMH_LinkStatus to a string.
+ *
+ * @param[in]  value  Value to be printed as a string.
+ */
+const char* const RMH_LinkStatusToString(const RMH_LinkStatus value);
+
+/**
+ * @brief Convert RMH_AdmissionStatus to a string.
+ *
+ * @param[in]  value  Value to be printed as a string.
+ */
+const char* const RMH_AdmissionStatusToString(const RMH_AdmissionStatus value);
+
+/**
+ * @brief Convert RMH_MoCAResetReason to a string.
+ *
+ * @param[in]  value  Value to be printed as a string.
+ */
+const char* const RMH_MoCAResetReasonToString(const RMH_MoCAResetReason value);
+
+/**
+ * @brief Convert RMH_SubcarrierProfile to a string.
+ *
+ * @param[in]  value  Value to be printed as a string.
+ */
+const char* const RMH_SubcarrierProfileToString(const RMH_SubcarrierProfile value);
+
+/**
+ * @brief Convert RMH_PERMode to a string.
+ *
+ * @param[in]  value  Value to be printed as a string.
+ */
+const char* const RMH_PERModeToString(const RMH_PERMode value);
+
+/**
+ * @brief Convert RMH_MoCAVersion to a string.
+ *
+ * @param[in]  value  Value to be printed as a string.
+ */
+const char* const RMH_MoCAVersionToString(const RMH_MoCAVersion value);
+
+/**
+ * @brief The input value should be a a bitmask of type RMH_PowerMode.
+ *
+ * This will be converted to a printable string.
+ *
+ * @param[in]   value            A bitmask of RMH_PowerMode to be printed as a string.
+ * @param[out]  responseBuf      A buffer where the log level string will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer <responseBuf>.
+ */
+const char* const RMH_PowerModeToString(const uint32_t value, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Convert value to a printable string.
+ *
+ * @param[in]   value   Value to be printed as a string.
+ */
+const char* const RMH_BandToString(const RMH_Band value);
+
+/**
+ * @brief Return the bitmask value as a string.
+ *
+ * The bitmask is expected to contain one or more of RMH_LogLevel.
+ *
+ * @param[in]   value            A bitmask of RMH_LogLevel to be printed as a string.
+ * @param[out]  responseBuf      A buffer where the log level string will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer responseBuf.
+ */
+const char* const RMH_LogLevelToString(const uint32_t value, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Return the bitmask value as a string.
+ *
+ * The bitmask is expected to contain one or more of RMH_Event.
+ *
+ * @param[in]   value            A bitmask of RMH_LogLevel to be printed as a string.
+ * @param[out]  responseBuf      A buffer where the log level string will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer responseBuf.
+ *
+ */
+const char* const RMH_EventToString(const uint32_t value, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Returns the  provided MAC address in value as a string.
+ *
+ * @param[in]   value            A byte array MAC address.
+ * @param[out]  responseBuf      A buffer where the MAC string will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer responseBuf.
+ *
+ */
+const char* const RMH_MacToString(const RMH_MacAddress_t value, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Convert value to a printable string.
+ *
+ * @param[in]   value            A byte array MAC address.
+ * @param[out]  responseBuf      A buffer where the MAC string will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer <responseBuf>.
+ *
+ */
+const char* const RMH_ACATypeToString(const RMH_ACAType value);
+
+/**
+ * @brief Convert ACA status to a printable string.
+ *
+ * @param[in]   value            Value to be printed as a string.
+ *
+ */
+const char* const RMH_ACAStatusToString(const RMH_ACAStatus value);
+
+/**
+ * @brief Check if the MoCA interface is enabled at the kernel level.
+ *
+ * Do not confuse with RMH_Self_GetEnabled which checks if the MoCA driver is active.
+ *
+ * @param[in]   handle          The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response        Set to true if the MoCA interface is enabled at the kernel level. Otherwise set to false.
+ */
+RMH_Result RMH_Interface_GetEnabled(const RMH_Handle handle, bool *response);
+
+/**
+ * @brief Set MoCA interface enabled or disabled at the kernel level.
+ *
+ * Do not confuse with RMH_Self_SetEnabled which checks if the MoCA driver is active.
+ *
+ * @param[in]   handle          The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response        Set to true if the MoCA interface is enabled at the kernel level. Otherwise set to false.
+ */
+RMH_Result RMH_Interface_SetEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Enable MoCA using RDK specific configuration.
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ */
+RMH_Result RMH_Self_SetEnabledRDK(const RMH_Handle handle);
+
+/**
+ * @brief Current operational status of the MoCA interface [mocaIfStatus].
+ *
+ * This API combines all known information about the MoCA device, including the driver, MoCA link, interface status, etc
+ * to determine if the link is functional.
+ * RMH_LINK_STATUS_UP indicates MoCA is ready for use.
+ *
+ * @param[in]   handle   The RMH handle as returned by RMH_Initialize.
+ * @param[out]  status   The current link state of MoCA.
+ */
+RMH_Result RMH_Self_GetLinkStatus(const RMH_Handle handle, RMH_LinkStatus* status);
+
+/**
+ * @brief Return a list of the associated ID for every node on the network.
+ *
+ * This is a one-based index of every remote node on the network.
+ * The self node is not included in this list.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The index is the node Id, if nodePresent is 'true', nodeValue is the associated Id for that node.
+ */
+RMH_Result RMH_Network_GetAssociatedIds(const RMH_Handle handle, RMH_NodeList_Uint32_t* response);
+
+/**
+ * @brief Convert an associated Id into a Node Id.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  associatedId      The associated Id of the node.
+ * @param[out] response          The node Id.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetNodeIdFromAssociatedId(const RMH_Handle handle, const uint32_t associatedId, uint32_t* response);
+
+/**
+ * @brief Convert a node Id into an associated Id.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The associated Id of the node.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetAssociatedIdFromNodeId(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the node Id with the maximum available bandwidth.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The node Id with the maximum egress bandwidth.
+ *
+ */
+RMH_Result RMH_PQoS_GetMaxEgressBandwidth(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Create a new log file in standard RDK format.
+ *
+ * This will:
+ * -# Locate the file at a writable location in the rootfs.
+ * -# Name the file using a RDK standard naming convention.
+ * -# Put any necessary static information at the beginning of the file.
+ * -# This includes build details and other useful information.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[in]  responseBuf      The file name.
+ * @param[in]  responseBufSize  The size in bytes of the buffer responseBuf.
+ *
+ * @note This API is for log messages from SoC MoCA driver only.
+ * The log level of the RMH libraries should be set with RMH_Log_SetAPILevel.
+ */
+RMH_Result RMH_Log_CreateDriverFile(const RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Print a summary of of the Tx/Rx MoCA status.
+ *
+ * If filename is NULL all log messages are printed with RMH_LOG_MESSAGE.
+ * If it is not NULL the status will be appended to that file.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[in]  filename         The file name where to write the status.
+ *                              If this is NULL the status will be written to RMH_LOG_MESSAGE.
+ */
+RMH_Result RMH_Log_PrintStats(const RMH_Handle handle, const char* filename);
+
+/**
+ * @brief Print a generic status summary of the MoCA flows.
+ *
+ * If filename is NULL all log messages are printed with RMH_LOG_MESSAGE with RMH_LOG_MESSAGE.
+ * If it is not NULL the status will be appended to that file.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[in]  filename         The file name where to write the status.
+ *                              If this is NULL the status will be written to RMH_LOG_MESSAGE.
+ */
+RMH_Result RMH_Log_PrintFlows(const RMH_Handle handle, const char* filename);
+
+/**
+ * @brief Print a summary of the sub carrier modulation bitloading information.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[in]  filename         The file name where to write the status.
+ *                              If this is NULL the status will be written to RMH_LOG_MESSAGE.
+ */
+RMH_Result RMH_Log_PrintModulation(const RMH_Handle handle, const char* filename);
+
+
+/** @} */ //End of doxygen tag MOCAHAL_GENERIC_API
+
+
+/**
+ * @addtogroup MOCAHAL_SOC_API
+ * @{
+ */
+/**
+ * @brief Return if the MoCA driver is actively connected to or attempting to connect to a MoCA network.
+ *
+ * @param[in]  handle    The RMH handle as returned by RMH_Initialize.
+ * @param[in]  response  Set to 'true' if the MoCA driver is active. Otherwise set to 'false'.
+ *
+ */
+RMH_Result RMH_Self_GetEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable the MoCA driver to connect to a MoCA network.
+ * Once enabled the driver will use whatever parameters it has been configured for.
+ *
+ * @param[in]  handle    The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value     Pass 'true' to enable the MoCA driver. Otherwise pass to 'false'.
+ *
+ */
+RMH_Result RMH_Self_SetEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Check if this device is actively connected to a MoCA network.
+ * If so, RMH_Network and RMH_Remote APIs will then be valid to call.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  response   Set to 'true' if this is device is actively connected to a MoCA Network.
+ *
+ */
+RMH_Result RMH_Self_GetMoCALinkUp(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief The last frequency on which this device operated.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  response   The last operating frequency of the device.
+ *
+ */
+RMH_Result RMH_Self_GetLOF(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Manually set the last operating frequency of the device.
+ *
+ * This can be helpful to control what frequency is used for future network connections.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value      The desired last operating frequency of the device.
+ *
+ */
+RMH_Result RMH_Self_SetLOF(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief Return if the device is scanning only the last operating frequency when attempting to establish a
+ * connection to a MoCA network.
+ *
+ * This can be helpful to control what frequency is used for future network connections.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Set to 'true' if only the LOF is being checked when joining a MoCA network.
+ *                        Otherwise set to 'false'.
+ *
+ */
+RMH_Result RMH_Self_GetScanLOFOnly(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Indicate if the device should join networks only on the last operating frequency.
+ *
+ * This is helpful to control the exact frequency used for MoCA.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Pass 'true' to ensure this node will only join a network at the LOF.
+ *                        Otherwise pass to 'false'.
+ *
+ */
+RMH_Result RMH_Self_SetScanLOFOnly(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Return if this device is a preferred NC.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Set to 'true' if the device is a preferred NC. Otherwise set to 'false'.
+ *
+ */
+RMH_Result RMH_Self_GetPreferredNCEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable preferred NC on this device.
+ *
+ * If this is enabled the device has a greater chance of becoming the NC, if set disable the chance of becoming the NC is reduced.
+ * However, please keep in mind that depending on your network configuration, a device with preferred NC disabled could still
+ * become the NC.
+ *
+ * @param[in]  handle    The RMH handle as returned by RMH_Initialize.
+ * @param[out] value     Pass 'true' to enable this device as a preferred NC. Otherwise pass to 'false'.
+ *
+ * @note Setting this value may trigger a restart of the MoCA driver and cause the device to temporarily leave the network.
+ *
+ */
+RMH_Result RMH_Self_SetPreferredNCEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief TBD [mocaIfPrimaryChannelOffset]
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   TBD.
+ *
+ */
+
+RMH_Result RMH_Self_GetPrimaryChannelOffset(const RMH_Handle handle, int32_t* response);
+
+/**
+ * @brief TBD [mocaIfSecondaryChannelOffset]
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value    TBD.
+ */
+RMH_Result RMH_Self_SetPrimaryChannelOffset(const RMH_Handle handle, const int32_t value);
+
+/**
+ * @brief TBD [mocaIfSecondaryChannelOffset]
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value    TBD.
+ *
+ */
+RMH_Result RMH_Self_GetSecondaryChannelOffset(const RMH_Handle handle, int32_t* response);
+
+/**
+ * @brief TBD [mocaIfSecondaryChannelOffset]
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value    TBD.
+ *
+ */
+RMH_Result RMH_Self_SetSecondaryChannelOffset(const RMH_Handle handle, const int32_t value);
+
+/**
+ * @brief Return the version of software being used by the MoCA driver on this device. [mocaIfSoftwareVersion]
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out] responseBuf      A buffer where the software version string will be written.
+ * @param[in]  responseBufSize  The size in bytes of the buffer <responseBuf>.
+ *
+ */
+RMH_Result RMH_Self_GetSoftwareVersion(const RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Return the highest version of MoCA supported by the MoCA driver on this device. [mocaIfMocaVersion].
+ *
+ * @param[in]  handle        The RMH handle as returned by RMH_Initialize.
+ * @param[out] response      The highest version of MoCA supported.
+ *
+ */
+RMH_Result RMH_Self_GetHighestSupportedMoCAVersion(const RMH_Handle handle, RMH_MoCAVersion* response);
+
+/**
+ * @brief Gets the bit mask  of frequencies the device used during the listening phase of network search.
+ *
+ * @param[in]  handle        The RMH handle as returned by RMH_Initialize.
+ * @param[out] response      The bitmask of frequencies this device will use when joining a network.
+ *
+ */
+RMH_Result RMH_Self_GetFrequencyMask(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the bit mask for specifying which frequencies should be scanned during the listening phase of network search.
+ *
+ * Depending on the RF band of operation, the MSB of this parameter corresponds to the lowest frequency channel of the band.
+ * Each subsequent bit of this parameter represents the next highest 25MHz channel.
+ * The base channels for each RF band are as follows:
+ * - Band D-Low : 46 (1150 MHz)
+ * - Band D-High: 56 (1400 MHz)
+ * - Band Ext-D : 46 (1150 MHz)
+ * - Band C4    : 40 (1000 MHz)
+ * - Band E     : 20 ( 500 MHz)
+ * - Band F     : 27 ( 675 MHz)
+ * - Band H     : 39 ( 975 MHz)
+ *
+ * @param[in]  handle        The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value         The bitmask of frequencies this device should use when joining a network.
+ *
+ */
+RMH_Result RMH_Self_SetFrequencyMask(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief Get the maximum number of packets this device will aggregate.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  response   The maximum number of packets this device will aggregate.
+ *
+ */
+
+RMH_Result RMH_Self_GetMaxPacketAggregation(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the maximum allowed packets for aggregated transmissions.
+ *
+ * @param[in]  handle  The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value   The maximum number of packets this device can aggregate.
+ *
+ */
+RMH_Result RMH_Self_SetMaxPacketAggregation(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief The maximum number of bytes this node can receive in one frame.
+ *
+ * @param[in]   handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response   The maximum number of packets this device can aggregate.
+ *
+ */
+RMH_Result RMH_Self_GetMaxFrameSize(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the maximum number of bytes this node can receive in one frame (aggregated transmission).
+ *
+ * @param[in]   handle  The RMH handle as returned by RMH_Initialize.
+ * @param[in]   value   The maximum number of packets this device can aggregate.
+ *
+ */
+RMH_Result RMH_Self_SetMaxFrameSize(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief Get the current lower limit for PHY rate between two nodes.
+ *
+ * @param[in]   handle    The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response  The lower PHY limit.
+ *
+ */
+RMH_Result RMH_Self_GetLowBandwidthLimit(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the lower threshold for the PHY link bandwidth between two nodes.
+ *
+ * If the rate falls below this limit a callback of type <RMH_EVENT_LOW_BANDWIDTH> will be triggered.
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value    The new value to use as the lower PHY limit.
+ *
+ */
+RMH_Result RMH_Self_SetLowBandwidthLimit(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief The maximum PHY rate supported in non-turbo mode.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  response   The maximum PHY rate.
+ *
+ */
+RMH_Result RMH_Self_GetMaxBitrate(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the maximum transmitter power level for this device.
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value    Desired transmitter power level. Minimum value -31, maximum value 3.
+ *
+ * @note Setting this value may trigger a restart of the MoCA driver and cause the device to temporarily leave the network.
+ *
+ */
+RMH_Result RMH_Self_SetTxPowerLimit(const RMH_Handle handle, const int32_t value);
+
+/**
+ * @brief Returns the maximum transmitter power level for this device.
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value    The maximum transmission power for this device.
+ *
+ */
+RMH_Result RMH_Self_GetTxPowerLimit(const RMH_Handle handle, int32_t* response);
+
+/**
+ * @brief Return a list of frequencies in the band used by this node.
+ *
+ * This frequency list does not account for taboo channels or other filters which would limit the scope of frequencies
+ * this device would use to join a network. [mocaIfChannelSupport].
+ *
+ * @param[in]   handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out]  responseArray      An array where the frequency list should be stored.
+ * @param[in]   responseArraySize  The size of the response array.
+ * @param[out]  responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_Self_GetSupportedFrequencies(const RMH_Handle handle, uint32_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the band supported by the MoCA device. [mocaIfSupportedBands].
+ *
+ * - RMH_BAND_C4 [MoCA 1.1]: 1000
+ * - RMH_BAND_D  [MoCA 1.1]: 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500
+ * - RMH_BAND_D_LOW: 1125, 1150, 1175, 1200, 1225
+ * - RMH_BAND_D_HIGH: 1350, 1375, 1400, 1425, 1450, 1475, 1500, 1525, 1550, 1575, 1600, 1625
+ * - RMH_BAND_D_EX: 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500
+ * - RMH_BAND_E: 500, 525, 550, 575, 600
+ * - RMH_BAND_F: 675, 700, 725, 750, 775, 800, 825, 850
+ * - RMH_BAND_H: 975, 1000, 1025
+ *
+ * @param[in]   handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response           The band supported by this MoCA device.
+ *
+ */
+RMH_Result RMH_Self_GetSupportedBand(const RMH_Handle handle, RMH_Band* response);
+
+/**
+ * @brief Return if this device is set as QAM256 capable in admission negotiations.
+ *
+ * @param[in]   handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response           Set to 'true' if QAM256 support is enabled. Otherwise set to 'false'.
+ *
+ */
+RMH_Result RMH_Self_GetQAM256Enabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable the QAM256 ability in admission negotiations.
+ *
+ * @param[in]  handle          The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value           Pass 'true' to enable QAM256 support on this device. Otherwise pass to 'false'.
+ *
+ * @note Setting this value may trigger a restart of the MoCA driver and cause the device to temporarily leave the network.
+ *
+ */
+RMH_Result RMH_Self_SetQAM256Enabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Get the target PHY rate in Mbps.
+ *
+ * @param[in]   handle          The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response        The target PHY rate in Mbps.
+ *
+ */
+RMH_Result RMH_Self_GetQAM256TargetPhyRate(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the target PHY rate in Mbps.
+ *
+ * @param[in]  handle    The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value     The target PHY rate in Mbps.
+ *
+ * @note Setting this value may trigger a restart of the MoCA driver and cause the device to temporarily leave the network.
+ *
+ */
+RMH_Result RMH_Self_SetQAM256TargetPhyRate(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief Return if turbo mode is enabled on this device.
+ *
+ * @param[in]   handle    The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response  Set to true if turbo is enabled. Otherwise set to false.
+ *
+ */
+RMH_Result RMH_Self_GetTurboEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable turbo mode on this device.
+ *
+ * @param[in]  handle  The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value   Pass 'true' to enable turbo on this device. Otherwise pass to 'false'.
+ *
+ */
+RMH_Result RMH_Self_SetTurboEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Return if bonding mode is enabled on this device.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  response   Set to 'true' if bonding is enabled. Otherwise set to 'false'.
+ *
+ */
+RMH_Result RMH_Self_GetBondingEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable bonding mode on this device.
+ *
+ * @param[in]  handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value    Pass 'true' to enable bonding on this device. Otherwise pass to 'false'.
+ *
+ */
+RMH_Result RMH_Self_SetBondingEnabled(const RMH_Handle handle, const bool value);
+
+
+/**
+ * @brief Return if MoCA privacy is enabled on this device.
+ *
+ * @param[in]   handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response   Set to 'true' if MoCA privacy is enabled. Otherwise set to 'false'.
+ */
+RMH_Result RMH_Self_GetPrivacyEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable MoCA privacy on this device.
+ *
+ * If enabled the device will only be permitted to join networks with other devices which have the same password.
+ *
+ * @param[in]   handle    The RMH handle as returned by RMH_Initialize.
+ * @param[out]  value     "Pass 'true' to enable MoCA privacy on this device. Otherwise pass to 'false'.
+ */
+RMH_Result RMH_Self_SetPrivacyEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Get the current MoCA privacy password.
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  responseBuf      A buffer where the MoCA password will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer <responseBuf>.
+ */
+RMH_Result RMH_Self_GetPrivacyPassword(const RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Set the network password used to generate privacy keys.
+ *
+ * This string must be between 12 and 17 characters long with each character being a decimal number (0-9).
+ *
+ * @param[in]   handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]   value      The MoCA network password. Although this is a string only 0-9 are permitted.
+ */
+RMH_Result RMH_Self_SetPrivacyPassword(const RMH_Handle handle, const char* value);
+
+/**
+ * @brief Get the SHA1 hash of the MoCA password as an ASCII string. [mocaIfPasswordHash].
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  responseBuf      A buffer where the MoCA managment key will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer responseBuf.
+ */
+RMH_Result RMH_Self_GetPrivacyMACManagementKey(RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Return if the RDK specific inter-frame gap of 10us is enabled on this device.
+ *
+ * This should be enabled on all MoCA 2.0 devices that would become the NC to ensure endure compatibility
+ * with all RDK vendors.
+ *
+ * @param[in]   handle        The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response      Set to 'true' if RDK IFG of 10us is enabled. Otherwise set to 'false'.
+ */
+RMH_Result RMH_Self_GetRDKInteroperabilityIFGEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable the RDK specific inter-frame gap of 10us.
+ *
+ * This setting is needed by all MoCA 2.0 devices that would become the NC to ensure endure compatibility with all RDK vendors.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value      Pass true to enable RDK IFG of 10us. Otherwise pass to false.
+ */
+RMH_Result RMH_Self_SetRDKInteroperabilityIFGEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Return which channels will be taboo on this device.
+ *
+ * channelMaskStart will indicate the channel number of the lowest RF frequency covered by channel mask.
+ * The bitmask channelMask is then used to identify exactly which frequencies are taboo.
+ * Each consecutive bit of channelMask corresponds to channels offset by multiples of 25MHz.
+ * A bit in channelMask will be set to '1' if that channel is taboo.
+ *
+ * @param[in]  handle              The RMH handle as returned by RMH_Initialize.
+ * @param[in]  channelMaskStart    The channel number of the lowest frequency which is taboo.
+ * @param[in]  channelMask         A bitmask of channels which are taboo.
+ *                                 The first bit corresponds to the frequency of channelMaskStart.
+ */
+RMH_Result RMH_Self_GetTabooChannels(const RMH_Handle handle, uint32_t *channelMaskStart,  uint32_t *channelMask);
+
+/**
+ * @brief Set which channels will be taboo on this device.
+ *
+ * channelMaskStart will indicate the channel number of the lowest RF frequency covered by channel mask.
+ * The bitmask channelMask is then used to identify exactly which frequencies are taboo.
+ * Each consecutive bit of channelMask corresponds to channels offset by multiples of 25MHz.
+ * A bit in channelMask must be set to 1 if that channel is taboo.
+ *
+ * @param[in]  handle              The RMH handle as returned by RMH_Initialize.
+ * @param[in]  channelMaskStart    The channel number of the lowest frequency which is taboo.
+ * @param[in]  channelMask         A bitmask of channels which are taboo.
+ *                                 The first bit corresponds to the frequency of channelMaskStart.
+ */
+RMH_Result RMH_Self_SetTabooChannels(const RMH_Handle handle, const uint32_t channelMaskStart,  const uint32_t channelMask);
+
+/**
+ * @brief Return this device to its default configuration.
+ *
+ * @param[in]  handle              The RMH handle as returned by RMH_Initialize.
+ */
+RMH_Result RMH_Self_RestoreDefaultSettings(const RMH_Handle handle);
+
+/**
+ * @brief Return the maximum number of allocation elements, excluding the TAUs and the Dummy DAUs,
+ * in one MAP the Node can process [mocaIfAeNumber].
+ *
+ * @param[in]   handle          The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response        Maximum number of allocation elements.
+ */
+
+RMH_Result RMH_Self_GetMaxAllocationElements(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the reason for the most recent link reset [mocaIfResetReason].
+ *
+ * @param[in]   handle          The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response        The reason for the most recent link reset.
+ */
+RMH_Result RMH_Self_GetLastResetReason(const RMH_Handle handle, RMH_MoCAResetReason* response);
+
+/**
+ * @brief Return the Linux interface name associated with the MoCA device. [mocaIfName]
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  responseBuf      A buffer where the interface name will be written.
+ * @param[in]   responseBufSize  The size in bytes of the buffer responseBuf.
+ */
+RMH_Result RMH_Interface_GetName(const RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Return the MAC address associated with this MoCA device. [mocaIfMacAddress].
+ *
+ * @param[in]   handle        The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response      The MAC address as a byte array.
+ */
+RMH_Result RMH_Interface_GetMac(const RMH_Handle handle, RMH_MacAddress_t* response);
+
+/**
+ * @brief Set the MAC address associated with this MoCA device.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value      The desired MAC address as a byte array.
+ */
+RMH_Result RMH_Interface_SetMac(const RMH_Handle handle, const RMH_MacAddress_t value);
+
+/**
+ * @brief Return the current MoCA power state of this device.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The current power mode of this device.
+ */
+RMH_Result RMH_Power_GetMode(const RMH_Handle handle, RMH_PowerMode* response);
+
+/**
+ * @brief Return a bitmask of RMH_PowerMode indicating all MoCA power modes supported by this device mocaIfPowerStateCap.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   A bitmask of RMH_PowerMode listing supported modes.
+ */
+RMH_Result RMH_Power_GetSupportedModes(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return if transmit power control is enabled or disabled for this device.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Set to 'true' if transmission power control is enabled. Otherwise set to 'false'.
+ */
+RMH_Result RMH_Power_GetTxPowerControlEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable if transmit power control is enabled for this device.
+ *
+ * @param[in] handle  The RMH handle as returned by RMH_Initialize.
+ * @param[in] value   Pass 'true' to enable transmission power control on this device. Otherwise pass to 'false'.
+ */
+RMH_Result RMH_Power_SetTxPowerControlEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Return if beacon power reduction is enabled on this device.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Set to 'true' if beacon power reduction is enabled. Otherwise set to 'false'.
+ */
+RMH_Result RMH_Power_GetTxBeaconPowerReductionEnabled(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Enable or disable if beacon power reduction on this device.
+ *
+ * @param[in] handle  The RMH handle as returned by RMH_Initialize.
+ * @param[in] value   Pass true to enable beacon power control on this device. Otherwise pass to false.
+ */
+RMH_Result RMH_Power_SetTxBeaconPowerReductionEnabled(const RMH_Handle handle, const bool value);
+
+/**
+ * @brief Return the power control back-off used by this node for transmitting beacons.
+ *
+ * @param[in]  handle    The RMH handle as returned by RMH_Initialize.
+ * @param[out] response  Beacon power reduction.
+ */
+RMH_Result RMH_Power_GetTxBeaconPowerReduction(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the power control back-off used by this node for transmitting beacons.
+ *
+ * @param[in] handle   The RMH handle as returned by RMH_Initialize.
+ * @param[in] value    Beacon power reduction. Minimum value 0, Maximum value 5.
+ */
+
+RMH_Result RMH_Power_SetTxBeaconPowerReduction(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief Return the number of MoCA nodes in the network. [mocaIfNumNodes].
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Number of MoCA nodes in the network.
+ */
+RMH_Result RMH_Network_GetNumNodes(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the node ID of this device.
+ *
+ * [mocaIfNodeID] This is a zero based ID which uniquely identifies this node on the network.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The device's node ID.
+ */
+
+RMH_Result RMH_Network_GetNodeId(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return a list of every node ID on the network.
+ *
+ * This differs from RMH_Network_GetRemoteNodeIds as this API includes the self node.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The index is the node Id, if nodePresent is 'true', nodeValue is the node Id.
+ */
+RMH_Result RMH_Network_GetNodeIds(const RMH_Handle handle, RMH_NodeList_Uint32_t* response);
+
+
+/**
+ * @brief Return a list of every node ID on the network.
+ *
+ * This differs from RMH_Network_GetNodeIds as this API does not include the self node.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The index is the node Id, if nodePresent is 'true', nodeValue is the node Id.
+ */
+RMH_Result RMH_Network_GetRemoteNodeIds(const RMH_Handle handle, RMH_NodeList_Uint32_t* response);
+
+/**
+ * @brief Return the node ID of the network coordinator. [mocaIfNC]
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The network coordinator node Id.
+ */
+RMH_Result RMH_Network_GetNCNodeId(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the node ID of the backup network coordinator [mocaIfBackupNC].
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The backup network coordinator node Id.
+ */
+RMH_Result RMH_Network_GetBackupNCNodeId(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the MAC address of the network coordinator.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The MAC address of the network coordinator.
+ */
+RMH_Result RMH_Network_GetNCMac(const RMH_Handle handle, RMH_MacAddress_t* response);
+
+/**
+ * @brief Returns the amount of time this node has been part of the MoCA network [mocaIfLinkUpTime].
+ *
+ * Time is in seconds.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Number of seconds this node has been in the network.
+ */
+RMH_Result RMH_Network_GetLinkUptime(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Returns the number of times the MoCA link has gone down since the last boot. [mocaIfResetCount]
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Number of seconds this node has been in the network.
+ */
+RMH_Result RMH_Network_GetResetCount(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Returns the number of times the MoCA link has gone down since the last boot [mocaIfLinkDownCount].
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Number of seconds this node has been in the network.
+ */
+RMH_Result RMH_Network_GetLinkDownCount(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Check if the MoCA network contains both 1.1 and 2.0 nodes.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Set to true if both 1.1 and 2.0 nodes are present in the network. Otherwise set to false.
+ */
+
+RMH_Result RMH_Network_GetMixedMode(const RMH_Handle handle, bool* response);
+
+/**
+ * @brief Return the frequency which the MoCA network is operating on. [mocaIfRFChannel]
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The frequency of the MoCA network.
+ */
+RMH_Result RMH_Network_GetRFChannelFreq(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the primary MoCA 2.0 channel.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The primary MoCA 2.0 channel.
+ */
+RMH_Result RMH_Network_GetPrimaryChannelFreq(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the secondary MoCA 2.0 channel.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The secondary MoCA 2.0 channel.
+ */
+RMH_Result RMH_Network_GetSecondaryChannelFreq(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the version of MoCA under which the network is operating. [mocaIfNetworkVersion]
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The MoCA version of the network.
+ */
+RMH_Result RMH_Network_GetMoCAVersion(const RMH_Handle handle, RMH_MoCAVersion* response);
+
+/**
+ * @brief Return the PHY rate at which broadcast packets are transmitted from this node.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The broadcast transmission PHY rate.
+ */
+RMH_Result RMH_Network_GetTxBroadcastPhyRate(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the GCD PHY rate which packets are transmitted from this node.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The GCD transmission PHY rate.
+ */
+RMH_Result RMH_Network_GetTxGCDPhyRate(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the PHY rate at which MAP packets are transmitted from this node.
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   The MAP transmission PHY rate.
+ */
+RMH_Result RMH_Network_GetTxMapPhyRate(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief The transmit power control back-off used for broadcast transmissions from this node. [mocaIfTxGcdPowerReduction]
+ *
+ * @param[in]  handle     The RMH handle as returned by RMH_Initialize.
+ * @param[out] response   Transmit power control reduction. Minimum value 0, Maximum value 35.
+ */
+RMH_Result RMH_Network_GetTxGcdPowerReduction(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return which beacon channels will be taboo on this device.
+ *
+ * channelMaskStart will indicate the channel number of the lowest.
+ * RF frequency covered by channel mask.
+ * The bitmask channelMask is then used to identify exactly which frequencies.
+ *
+ * @param[in] handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in] channelMaskStart  The channel number of the lowest frequency which is taboo.
+ * @param[in] channelMask       A bitmask of channels which are taboo.
+ *                              The first bit corresponds to the frequency of channelMaskStart.
+ */
+RMH_Result RMH_Network_GetTabooChannels(const RMH_Handle handle, uint32_t *channelMaskStart,  uint32_t *channelMask);
+
+/**
+ * @brief Return the unicast transmit PHY rates between all nodes on the network.
+ *
+ * The resulting matrix will be in RMH_NodeMesh_Uint32_t Where the index is the node Id
+ * If nodePresent is 'true', then nodeValue is a list of the unicast PHY rates from this
+ * node Id to every other node on the network.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[out] response          A bitmask of channels which are taboo.
+ *                               The first bit corresponds to the frequency of channelMaskStart.
+ */
+RMH_Result RMH_Network_GetTxUnicastPhyRate(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);
+
+/**
+ * @brief Return the transmit VLPER (Very Low Packet Error Rate) PHY rates between all MoCA 2.0 nodes on the network.
+ *
+ * The resulting matrix will be in RMH_NodeMesh_Uint32_t  Where the index is the node Id.
+ * if nodePresent is 'true'then <nodeValue> is a list of the unicast PHY rates from this node Id
+ * to every other node on the network.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[out] response          A bitmask of channels which are taboo.
+ *                               The first bit corresponds to the frequency of channelMaskStart.
+ *
+ * @note MoCA 1.1 nodes will have nodePresent set to 'true', however they nodeValue will be 0.
+ */
+RMH_Result RMH_Network_GetTxVLPER(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);
+
+/**
+ * @brief Return the transmit NPER (Nominal Packet Error Rate) PHY rates *from* all MoCA 2.0 nodes on the network.
+ *
+ * The resulting matrix will be in RMH_NodeMesh_Uint32_t  Where the index is the node Id.
+ * if nodePresent is 'true'then nodeValue is a list of the unicast PHY rates from this node Id
+ * to every other node on the network.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[out] response          The PHY rate mesh table.
+ *
+ * @note MoCA 1.1 nodes will have nodePresent set to 'true', however they nodeValue will be 0.
+ */
+RMH_Result RMH_Network_GetTxNPER(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);
+
+/**
+ * @brief Returns the bit loading information.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[out] response          The resulting bitloading information.
+ *
+ */
+RMH_Result RMH_Network_GetBitLoadingInfo(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response);
+
+/**
+ * @brief Return the MAC address of the remote node specified by nodeId
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The MAC address of the remote node as a byte array.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetMac(const RMH_Handle handle, const uint32_t nodeId, RMH_MacAddress_t* response);
+
+/**
+ * @brief Return if the node indicated by nodeId is a preferred NC or not.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          Returns True, if the remote node is a preferred NC. False otherwise.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetPreferredNC(const RMH_Handle handle, const uint32_t nodeId, bool* response);
+
+/**
+ * @brief Return the highest supported version of MoCA by the remote node specified by nodeId.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The highest version of MoCA supported.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetHighestSupportedMoCAVersion(const RMH_Handle handle, const uint32_t nodeId, RMH_MoCAVersion* response);
+
+/**
+ * @brief Return the active supported version of MoCA by the remote node specificed by nodeId.
+ *
+ * There are cases where devices that support MoCA 2.0 may be actively using MoCA 1.1 .
+ * For example, when the NC is a MoCA 1.1 node.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The active version of MoCA on the remote node.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetActiveMoCAVersion(const RMH_Handle handle, const uint32_t nodeId, RMH_MoCAVersion* response);
+
+/**
+ * @brief Return if the node indicated by nodeId has QAM256 enabled or not.
+ *
+ * There are cases where devices that support MoCA 2.0 may be actively using MoCA 1.1 .
+ * For example, when the NC is a MoCA 1.1 node.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          Set to true if the remote node is a QAM256 capable. Otherwise set to false.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetQAM256Capable(const RMH_Handle handle, const uint32_t nodeId, bool* response);
+
+/**
+ * @brief Return the maximum number of packets for aggregated transmissions for the node indicated by nodeId.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The maximum number of packets nodeId will aggregate.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetMaxPacketAggregation(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief The maximum number of bytes this node can receive in one frame (aggregated transmission).
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The maximum number of packets this device will aggregate.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetMaxFrameSize(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return if the node indicated by nodeId is bonding capable enabled or not.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          Set to true if the remote node supports bonding. Otherwise set to false.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetBondingCapable(const RMH_Handle handle, const uint32_t nodeId, bool* response);
+
+/**
+ * @brief Return the PHY rate at which unicast packets are received from nodeId of the self node.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The unicast receive PHY rate.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxUnicastPhyRate(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the PHY rate at which broadcast packets are received from nodeId.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The broadcast receive PHY rate.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxBroadcastPhyRate(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the power level at which broadcast packets are received from nodeId.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The broadcast receive power level.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxBroadcastPower(const RMH_Handle handle, const uint32_t nodeId, float* response);
+
+/**
+ * @brief Return the power level at which unicast packets are received from nodeId from the self node.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The unicast receive power level.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxUnicastPower(const RMH_Handle handle, const uint32_t nodeId, float* response);
+
+/**
+ * @brief Return the power level at which MAP packets are received by nodeId.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The MAP receive power level rate.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxMapPower(const RMH_Handle handle, const uint32_t nodeId, float* response);
+
+/**
+ * @brief Return the number of packets nodeId has received.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          Number of packets received by nodeId.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxPackets(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief The signal to noise ratio of nodeId based on the Type 1 probe from per node.
+ *
+ * Measured in dB.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The SNR of nodeId.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxSNR(const RMH_Handle handle, const uint32_t nodeId, float* response);
+
+/**
+ * @brief Return the number of packets with corrected errors nodeId has received.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The number of corrected packets with errors.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxCorrectedErrors(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the number of packets with uncorrected errors <nodeId> has received.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The number of corrected packets with errors.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxUnCorrectedErrors(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the total number of packets with errors nodeId has received.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The number of total number of packets with errors.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxTotalErrors(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the PHY rate at which unicast packets are transmitted from nodeId to the self node.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The unicast transmission PHY rate.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetTxUnicastPhyRate(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the power level rate at which unicast packets are transmitted from nodeId to the self node.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The unicast transmission power level rate.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetTxUnicastPower(const RMH_Handle handle, const uint32_t nodeId, float* response);
+
+/**
+ * @brief The transmit power control back-off used for transmissions from the specified nodeId.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The transmission power reduction of nodeId.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetTxPowerReduction(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return the total number of packets nodeId has transmitted.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The total number of packets transmitted by nodeId.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetTxPackets(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Instruct one or more nodes to initiate a MoCA Reset command.
+ *
+ * This will result in the specfied nodes dropping from the network and then rejoining.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeListMask      A bitmask of nodes to be reset [mocaIfMrNodeMask].
+ *                               For example, to reset a given node use 'nodeListMask |= (1 << nodeId)'")
+ *
+ * @param[in] startTime          The time in seconds to start the reset command [mocaIfMrStartTime].
+ *
+ */
+RMH_Result RMH_RemoteNode_Reset(const RMH_Handle handle, const uint32_t nodeListMask, const uint32_t startTime);
+
+/**
+ * @brief Return the unicast recieve subcarrier modulation profiles for the primary MoCA channel.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId             The node Id of the remote node to inspect.
+ * @param[in]  perMode            The PER Mode to check.This parameter will be ignored for MoCA devices older than 2.0.
+ * @param[out] responseArray      An array where the sub carrier modulation should be stored.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the unicast  transmit subcarrier modulation profiles for the primary MoCA channel.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId             The node Id of the remote node to inspect.
+ * @param[in]  perMode            The PER Mode to check.This parameter will be ignored for MoCA devices older than 2.0.
+ * @param[out] responseArray      An array where the sub carrier modulation should be stored.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetTxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the unicast recieve subcarrier modulation profiles for the secondary MoCA channel.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId             The node Id of the remote node to inspect.
+ * @param[in]  perMode            The PER Mode to check.This parameter will be ignored for MoCA devices older than 2.0.
+ * @param[out] responseArray      An array where the sub carrier modulation should be stored.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetSecondaryRxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the unicast transmit subcarrier modulation profiles for the secondary MoCA channel.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId             The node Id of the remote node to inspect.
+ * @param[in]  perMode            The PER Mode to check.This parameter will be ignored for MoCA devices older than 2.0.
+ * @param[out] responseArray      An array where the sub carrier modulation should be stored.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the receive broadcast subcarrier modulation profiles for the channel.
+ *
+ * In the case of a MoCA 1.1 connection this will return the SubcarrierModulation.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId             The node Id of the remote node to inspect.
+ * @param[in]  perMode            The PER Mode to check.This parameter will be ignored for MoCA devices older than 2.0.
+ * @param[out] responseArray      An array where the sub carrier modulation should be stored.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetRxBroadcastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the transmission broadcast subcarrier modulation profiles for the channel.
+ *
+ * In the case of a MoCA 1.1 connection this will return the SubcarrierModulation.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId             The node Id of the remote node to inspect.
+ * @param[in]  perMode            The PER Mode to check.This parameter will be ignored for MoCA devices older than 2.0.
+ * @param[out] responseArray      An array where the sub carrier modulation should be stored.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_RemoteNode_GetTxBroadcastSubcarrierModulation(const RMH_Handle handle, const uint32_t nodeId, const RMH_PERMode perMode, RMH_SubcarrierProfile* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the maximum number of supported Ingress PQoS Flows by the Node [mocaIfSupportedIngressPqosFlows].
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           Maximum number of supported Ingress PQoS Flows by the Node.
+ *
+ */
+RMH_Result RMH_PQOS_GetMaxIngressFlows(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the maximum number of supported Egress PQoS Flows by the Node [mocaIfSupportedEgressPqosFlows].
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           Maximum number of supported Egress PQoS Flows by the Node.
+ *
+ */
+RMH_Result RMH_PQOS_GetMaxEgressFlows(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of ingress flows.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of ingress flows.
+ *
+ */
+RMH_Result RMH_PQoS_GetNumIngressFlows(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of egress flows.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[out] response          The number of egress flows.
+ *
+ */
+RMH_Result RMH_PQoS_GetNumEgressFlows(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the amount of egress bandwidth available on a particular node.
+ *
+ * @param[in]  handle            The RMH handle as returned by RMH_Initialize.
+ * @param[in]  nodeId            The node Id of the remote node to inspect.
+ * @param[out] response          The available egress bandwidth.
+ *
+ */
+RMH_Result RMH_PQoS_GetEgressBandwidth(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response);
+
+/**
+ * @brief Return a list of the unique Id for each existing ingress flows.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] responseArray      An array where the flow unique Ids should be returned.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ *
+ */
+RMH_Result RMH_PQoS_GetIngressFlowIds(const RMH_Handle handle, RMH_MacAddress_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the peak data rate in Kbps for the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The peak data rate in Kbps.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetPeakDataRate(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the number of packets per burst for the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The packets per burst.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetBurstSize(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the lease time in seconds for the flow specified by flowId.
+ *
+ * Zero indicates an infinite lease time.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The lease time in seconds.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetLeaseTime(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the lease time remaining in seconds for the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The lease time remaining in seconds.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetLeaseTimeRemaining(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the tag for the flow specified by flowId. This is optional for application use.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The flow tag.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetFlowTag(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the maximum latency of the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The maximum latency.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetMaxLatency(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the short term average ratio for the flow specified by flowId.
+ *
+ * This is the ratio of the short term average rate of the flow compared to the peak rate
+ * over the interval of RMH_PQoSFlow_GetMaxLatency.
+ * This value plus one serves as the numerator of the ratio.
+ * The denominator is 256.
+ * This value is only applicable when the maximun latency value is greater than or equal to 10 ms.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The short term average ratio.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetShortTermAvgRatio(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the maximum number of retransmission attempts for each MSDU of the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The maximum retransmission attempts.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetMaxRetry(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the VLAN priority for the flow specified by flowId.
+ *
+ * This is used for MSDU classification when RMH_PQoSFlow_GetIngressClassificationRule is 6 or 7.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The VLAN tag.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetVLANTag(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the flow packet error ratio profile for the flow specified by flowId.
+ *
+ * This is to specify whether the flow should use the nominal packet error rate (PER) PHY profile
+ * or the Very Low PER PHY profile.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The flow PER profile.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetFlowPer(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the ingress classification rule for assigning MSDUs to the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The ingress classification rule.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetIngressClassificationRule(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the packet size in bytes of the flow specified by flowId.
+ *
+ * This includes the VLAN header but not including the FCS.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The flow packet size.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetPacketSize(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the total number of packets transmitted on the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The total number of packets transmitted.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetTotalTxPackets(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the DSCP MoCA value for the flow specified by flowId.
+ *
+ * The value of the three MSB of the DSCP Type of Service field is used for MSDU classification when
+ * RMH_PQoSFlow_GetIngressClassificationRule is set to 1 or 3.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The DSCP MoCA.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetDSCPMoCA(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the destination flow ID of the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The DFID of the flow.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetDFID(const RMH_Handle handle, const RMH_MacAddress_t flowId, uint32_t* response);
+
+/**
+ * @brief Return the destination flow ID of the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The DFID of the flow.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetDestination(const RMH_Handle handle, const RMH_MacAddress_t flowId, RMH_MacAddress_t *response);
+
+/**
+ * @brief Return the ingress MAC address of the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The ingress MAC of the flow.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetIngressMac(const RMH_Handle handle, const RMH_MacAddress_t flowId, RMH_MacAddress_t *response);
+
+/**
+ * @brief Return the egress MAC address of the flow specified by flowId.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  flowId             The unique flow identifier.
+ * @param[out] response           The ingress MAC of the flow.
+ *
+ */
+RMH_Result RMH_PQoSFlow_GetEgressMac(const RMH_Handle handle, const RMH_MacAddress_t flowId, RMH_MacAddress_t *response);
+
+
+/**
+ * @brief Return the node Id with the minimum available bandwidth.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The node Id with the minimum available bandwidth.
+ *
+ */
+
+RMH_Result RMH_PQoS_GetMinEgressBandwidth(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of admission attempts this node has made.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of admission attempts.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetAdmissionAttempts(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of admission failures for this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of admission failures by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetAdmissionFailures(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of successful admissions for this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of successful admissions by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetAdmissionSucceeded(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of admissions this node has denied when it was the NC.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of admissions this node has denied when it was the NC.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetAdmissionsDeniedAsNC(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of bytes transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of bytes transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxTotalBytes(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of bytes received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of bytes received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxTotalBytes(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of packets transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of packets transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxTotalPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of packets received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of received transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxTotalPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of unicast packets transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of unicast packets transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxUnicastPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of unicast packets received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of unicast packets received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxUnicastPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of  broadcast packets transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of broadcast packets transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxBroadcastPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of  broadcast packets received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of broadcast packets received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxBroadcastPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of multicast packets transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of multicast packets transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxMulticastPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of multicast packets received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of multicast packets received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxMulticastPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of reservation request packets transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of reservation request packets transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxReservationRequestPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of reservation request packets received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of reservation request packets received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxReservationRequestPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of MAP transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of MAP packets transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxMapPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of MAP received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of MAP packets received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxMapPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of link control transmitted by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of link control packets transmitted by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxLinkControlPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of link control received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of link control packets received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxLinkControlPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of link control received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of link control packets received by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxBeacons(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of beacons received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of  beacons received by this  node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxBeacons(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of unknown packets received by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of  unknown packets received by this  node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxUnknownProtocolPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of packets this node has dropped before transmitting.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of packets dropped by this node before transmitting.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxDroppedPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the number of packets this node has dropped after receiving.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The number of received packets dropped by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxDroppedPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of transmit errors by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of transmit errors by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxTotalErrors(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of received errors by this node.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of receive errors by this node.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxTotalErrors(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of packets this node has received with CRC errors.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of received packets with CRC errors.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxCRCErrors(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of packets this node has received with timeout errors.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of received packets with timeout errors.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxTimeoutErrors(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of received aggregated packets.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of received aggregated packets.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxTotalAggregatedPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the total number of transmitted aggregated packets.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] response           The total number of transmitted aggregated packets.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxTotalAggregatedPackets(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return an array indicating the number of packets received per aggregation number.
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[out] responseArray      The total number of transmitted aggregated packets.
+ * @param[in]  responseArraySize  The size of the response array.
+ * @param[out] responseArrayUsed     The number of entries in the response array which have valid data.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxPacketAggregation(const RMH_Handle handle, uint32_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return an array indicating the number of packets transmitted per aggregation number.
+ *
+ * The array index indicates the number of transmitted bursts.
+ * So index 0 counts transmitted bursts with actual aggregation of 0, index 2 counts actual aggregation of 2, and so on.
+ *
+ * @param[in]  handle                The RMH handle as returned by RMH_Initialize.
+ * @param[out] responseArray         An array where the aggregation information should be returned.
+ * @param[in]  responseArraySize     The size of the response array.
+ * @param[out] responseArrayUsed     The number of entries in the response array which have valid data.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetTxPacketAggregation(const RMH_Handle handle, uint32_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/**
+ * @brief Return the number of received packets from every node with errors which were corrected.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out] response         Number of corrected errors for that node, if nodePresent is true.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxCorrectedErrors(const RMH_Handle handle, RMH_NodeList_Uint32_t* response);
+
+/**
+ * @brief Return the number of received packets from every node with errors which were not corrected.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out] response         Number of corrected errors for that node, if nodePresent is true.
+ *
+ * @note This counter is reset by RMH_Stats_Reset.
+ */
+RMH_Result RMH_Stats_GetRxUncorrectedErrors(const RMH_Handle handle, RMH_NodeList_Uint32_t* response);
+
+/**
+ * @brief Reset MoCA statistics counters back to zero.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize.
+ */
+RMH_Result RMH_Stats_Reset(const RMH_Handle handle);
+
+/**
+ * @brief Return a bitmask of RMH_LogLevel which indicates the currently enabled RMH log types in the RMH library.
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response         The RMH API log level.
+ *
+ * @note This API is for log messages from RMH libraries only.
+ * The log level of the lower level MoCA driver should be read with RMH_Log_GetDriverLevel.
+ */
+RMH_Result RMH_Log_GetAPILevel(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Set the log level of the RMH library.
+ *
+ * This is set as a bitmask of RMH_LogLevel indicating the RMH log types to enable in the RMH libraries.
+ *
+ * @param[in]  handle         The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value          The desired RMH API log level.
+ *
+ */
+RMH_Result RMH_Log_SetAPILevel(const RMH_Handle handle, const uint32_t value);
+
+/**
+ * @brief Return a bitmask of RMH_LogLevel which indicates the currently enabled RMH log types in the MoCA driver.
+ *
+ * @param[in]  handle         The RMH handle as returned by RMH_Initialize.
+ * @param[out] response       The SoC MoCA Driver log level.
+ *
+ * @note This API is for log messages from SoC MoCA driver only.
+ * The log level of the RMH library should be read with RMH_Log_GetDriverLevel.
+ */
+RMH_Result RMH_Log_GetDriverLevel(const RMH_Handle handle, RMH_LogLevel* response);
+
+/**
+ * @brief Set the log level of the MoCA driver.
+ *
+ * This is set as a bitmask of RMH_LogLevel indicating the RMH log types to enable at the driver.
+ *
+ * @param[in]  handle         The RMH handle as returned by RMH_Initialize.
+ * @param[out] response       The SoC MoCA Driver log level.
+ *
+ * @note This API is for log messages from SoC MoCA driver only.
+ * The log level of the RMH libraries should be set with RMH_Log_SetAPILevel.
+ */
+RMH_Result RMH_Log_SetDriverLevel(const RMH_Handle handle, const RMH_LogLevel value);
+
+/**
+ * @brief Get the file name where MoCA driver logs are currently being captured.
+ *
+ * @param[in]  handle          The RMH handle as returned by RMH_Initialize.
+ * @param[out] responseBuf     A buffer where the filename will be written.
+ * @param[in]  responseBufSize The size in bytes of the buffer responseBuf.
+ *
+ * @note This API is for log messages from SoC MoCA driver only.
+ * The log level of the RMH libraries should be set with RMH_Log_SetAPILevel.
+ */
+RMH_Result RMH_Log_GetDriverFilename(const RMH_Handle handle, char* responseBuf, const size_t responseBufSize);
+
+/**
+ * @brief Set the file name where MoCA driver logs should be captured to.
+ *
+ * If logs are already being captured to a file this capture will stop at that location and begin in this file.
+ * If the new log file already exists new logs will append to it.
+ *
+ * @param[in]  handle          The RMH handle as returned by RMH_Initialize.
+ * @param[in]  value           A file name where logs should be written.
+ *
+ * @note This API is for log messages from SoC MoCA driver only.
+ * The log level of the RMH libraries should be set with RMH_Log_SetAPILevel.
+ */
+RMH_Result RMH_Log_SetDriverFilename(const RMH_Handle handle, const char* value);
+
+
+/**
+ * @brief Print a generic status summary of the MoCA device and network.
+ *
+ * If filename is NULL all log messages are printed with RMH_LOG_MESSAGE.
+ * If it is not NULL the status will be appended to that file.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[in]  filename         The file name where to write the status.
+ *                              If this is NULL the status will be written to RMH_LOG_MESSAGE.
+ */
+RMH_Result RMH_Log_PrintStatus(const RMH_Handle handle, const char* filename);
+
+
+
+/**
+ * @brief Print a summary of the sub carrier modulation bitloading information.
+ *
+ * @param[in]  handle           The RMH handle as returned by RMH_Initialize. NULL is valid for this API.
+ * @param[in]  filename         The file name where to write the status.
+ *                              If this is NULL the status will be written to RMH_LOG_MESSAGE.
+ */
+RMH_Result RMH_ACA_Request(const RMH_Handle handle, const uint32_t channelNum, const uint32_t sourceNodeId, const uint32_t destinationNodeMask, const RMH_ACAType type);
+
+/**
+ * @brief Return the channel number of the last requested ACA. [mocaIfAcaNodeID].
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response         The channel number of the last requested ACA. [mocaIfAcaNodeID].
+ */
+RMH_Result RMH_ACA_GetChannel(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the Node ID of the source node for the last requested ACA. [mocaIfAcaNodeID].
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response         The Node ID of the source node for the last requested ACA. [mocaIfAcaNodeID].
+ */
+RMH_Result RMH_ACA_GetSourceNodeId(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the bitmask of the destination nodes for the last requested ACA. [mocaIfAcaReportNodeMask].
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response         The bitmask of the destination nodes for the last requested ACA.
+ *                               [mocaIfAcaReportNodeMask].
+ */
+RMH_Result RMH_ACA_GetDestinationNodeMask(const RMH_Handle handle, uint32_t* response);
+
+/**
+ * @brief Return the type of the last requested ACA operation.
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response         The type of the last requested ACA operation [mocaIfAcaType].
+ */
+RMH_Result RMH_ACA_GetType(const RMH_Handle handle, RMH_ACAType* response);
+
+/**
+ * @brief Return the current status of the last requested ACA operation.
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response         The current status of the previously started ACA operation [mocaIfAcaStatus].
+ */
+RMH_Result RMH_ACA_GetStatus(const RMH_Handle handle, RMH_ACAStatus* response);
+
+/**
+ * @brief Return the total power from the last completed ACA operation.
+ *
+ * This call will fail if an ACA operation is already in progress.
+ *
+ * @param[in]   handle           The RMH handle as returned by RMH_Initialize.
+ * @param[out]  response         The total power from the last completed ACA operation [mocaIfAcaTotalRxPower].
+ */
+RMH_Result RMH_ACA_GetTotalRxPower(const RMH_Handle handle, int32_t* response);
+
+/**
+ * @brief Returns the ACA power profile.
+ *
+ * Returns a binary string array with 1 byte for each subcarrier. [mocaIfAcaPowerProfile].
+ *
+ * @param[in]  handle             The RMH handle as returned by RMH_Initialize.
+ * @param[in]  responseArray      The ACA power profile.
+ * @param[in]  responseArraySize  The size of responseArray.
+ * @param[out] responseArrayUsed  The number of entries in the response array which have valid data.
+ */
+RMH_Result RMH_ACA_GetPowerProfile(const RMH_Handle handle, uint8_t* responseArray, const size_t responseArraySize, size_t* responseArrayUsed);
+
+/** @} */ //End of doxygen tag MOCAHAL_SOC_API
+
+#endif
 
 #ifdef __cplusplus
 }
