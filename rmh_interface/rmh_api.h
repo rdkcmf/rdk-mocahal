@@ -98,6 +98,33 @@ TRUE,
 
 
 
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ValidateHandle(RMH_Handle handle),
+
+/* API Name */
+RMH_ValidateHandle,
+
+/* Description */
+"Returns RMH_SUCCESS if the handle is still valid.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             RMH_Handle,
+        "The RMH handle as returned by RMH_Initialize")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Core"
+/********************************************************************************************************************/
+)
+
+
+
 RMH_API_IMPLEMENTATION_GENERIC_THEN_SOC(
 /********************************************************************************************************************/
 /* API Declaration */
@@ -1743,31 +1770,6 @@ TRUE,
 )
 
 
-RMH_API_IMPLEMENTATION_GENERIC_ONLY(
-/********************************************************************************************************************/
-/* API Declaration */
-RMH_Result RMH_Self_SetEnabledRDK(const RMH_Handle handle),
-
-/* API Name */
-RMH_Self_SetEnabledRDK,
-
-/* Description */
-"Enable MoCA uisng RDK specific configuration",
-
-/* Parameters */
-PARAMETERS(
-    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize")
-),
-
-/* Wrap API */
-TRUE,
-
-/* Tags */
-"Configuration [Set]"
-/********************************************************************************************************************/
-)
-
-
 
 RMH_API_IMPLEMENTATION_GENERIC_ONLY(
 /********************************************************************************************************************/
@@ -2011,7 +2013,33 @@ RMH_Result RMH_Self_RestoreDefaultSettings(const RMH_Handle handle),
 RMH_Self_RestoreDefaultSettings,
 
 /* Description */
-"Return this device to its default configuration",
+"Return this device to its default MoCA configuration",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set]"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_GENERIC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Self_RestoreRDKDefaultSettings(const RMH_Handle handle),
+
+/* API Name */
+RMH_Self_RestoreRDKDefaultSettings,
+
+/* Description */
+"Return this device to its default RDK MoCA configuration",
 
 /* Parameters */
 PARAMETERS(
@@ -4931,6 +4959,146 @@ TRUE,
 
 /* Tags */
 "Stats,NC"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Stats_GetAdmissionsFailedNoResponse(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Stats_GetAdmissionsFailedNoResponse,
+
+/* Description */
+"Return the number of admissions attempts that this node has failed with no response"
+"\n**NOTE: This counter is reset by <RMH_Stats_Reset>",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The number of admissions this node has failed with no response")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Stats"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Stats_GetAdmissionsFailedChannelUnusable(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Stats_GetAdmissionsFailedChannelUnusable,
+
+/* Description */
+"Return the number of admissions attempts that this node has failed with an unusable channel"
+"\n**NOTE: This counter is reset by <RMH_Stats_Reset>",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The number of admissions this node has failed with an unusable channel")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Stats"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Stats_GetAdmissionsFailedT2Timeout(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Stats_GetAdmissionsFailedT2Timeout,
+
+/* Description */
+"Return the number of admissions attempts that this node has failed with a T2 timeout"
+"\n**NOTE: This counter is reset by <RMH_Stats_Reset>",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The number of admissions this node has failed with a T2 timeout")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Stats"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Stats_GetAdmissionsFailedResyncLoss(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Stats_GetAdmissionsFailedResyncLoss,
+
+/* Description */
+"Return the number of admissions attempts that this node has failed with resync lost"
+"\n**NOTE: This counter is reset by <RMH_Stats_Reset>",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The number of admissions this node has failed with resync lost")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Stats"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Stats_GetAdmissionsFailedPrivacyFullBlacklist(const RMH_Handle handle, uint32_t* response),
+
+/* API Name */
+RMH_Stats_GetAdmissionsFailedPrivacyFullBlacklist,
+
+/* Description */
+"Return the number of admissions attempts that this node has failed because of a privacy issue, the network was full, or this node was blacklisted."
+"\n**NOTE: This counter is reset by <RMH_Stats_Reset>",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The number of admissions this node has failed")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Stats"
 /********************************************************************************************************************/
 )
 

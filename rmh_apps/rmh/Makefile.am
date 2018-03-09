@@ -28,5 +28,5 @@ bin_PROGRAMS = rmh
 
 # the sources to add to the library and to add to the source distribution
 rmh_SOURCES=rmh_app.c rmh_app_api_handlers.c
-rmh_LDADD = $(top_builddir)/rmh_lib/librdkmocahal.la -ldl
+rmh_LDADD = $(top_builddir)/rmh_lib/librdkmocahal.la
 rmh_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface

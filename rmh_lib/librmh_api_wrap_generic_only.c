@@ -21,12 +21,16 @@
 #include <sys/sysinfo.h>
 #include <net/if.h>
 #include <ctype.h>
+#include <string.h>
 #include "librmh.h"
 #include "rdk_moca_hal.h"
+#include "rfcapi.h"
 
-#define RDK_FILE_PATH_VERSION               "/version.txt"
-#define RDK_FILE_PATH_DEBUG_ENABLE          "/opt/rmh_start_enable_debug"
-#define RDK_FILE_PATH_DEBUG_FOREVER_ENABLE  "/opt/rmh_start_enable_debug_forever"
+#define RDK_FILE_PATH_VERSION                   "/version.txt"
+#define RDK_FILE_PATH_DEBUG_ENABLE              "/opt/rmh_start_enable_debug"
+#define RDK_FILE_PATH_DEBUG_FOREVER_ENABLE      "/opt/rmh_start_enable_debug_forever"
+#define RDK_RFC_FILE                            "/etc/rfc.properties"
+
 #define LOCAL_MODULATION_PRINT_LINE_SIZE 256
 
 static
@@ -99,18 +103,44 @@ int pRMH_TagCompare(const void* a, const void* b) {
     return strcasecmp(_a.apiListName, _b.apiListName);
 }
 
+RMH_Result pRMH_RFC_GetBool(const RMH_Handle handle, const char*name, bool *value) {
+    RFC_ParamData_t rfcParam;
+    WDMP_STATUS wdmpStatus;
 
-RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
+    wdmpStatus = getRFCParameter("RMH", name, &rfcParam);
+    if (wdmpStatus != WDMP_SUCCESS) {
+        if (wdmpStatus != WDMP_ERR_VALUE_IS_EMPTY) {
+            RMH_PrintErr("Failed reading from RFC -- %s -- Returned error '%s' (%u)\n", rfcParam.name, getRFCErrorString(wdmpStatus), wdmpStatus);
+        }
+        return RMH_FAILURE;
+    }
+
+    /* There are cases where RFC type might not be set correctly. To be sure of our value We'll explictly test both values. */
+    if (0 == strcasecmp(rfcParam.value, "TRUE")) {
+        *value=true;
+    }
+    else if (0 == strcasecmp(rfcParam.value, "FALSE")) {
+        *value=false;
+    }
+    else {
+        RMH_PrintErr("Unexpected value reading from RFC -- %s -- Returned '%s' which is type %u. Expecting type WDMP_BOOLEAN(%u)\n", rfcParam.name, rfcParam.value, getRFCErrorString(wdmpStatus), rfcParam.type, WDMP_BOOLEAN);
+        return RMH_FAILURE;
+    }
+
+    return RMH_SUCCESS;
+}
+
+RMH_Result GENERIC_IMPL__RMH_Self_RestoreRDKDefaultSettings(const RMH_Handle handle) {
     bool started;
+    bool rfcBool;
 
-    /* Ensure MoCA is disabled on this device */
     BRMH_RETURN_IF_FAILED(RMH_Self_GetEnabled(handle, &started));
     if (started) {
-        RMH_PrintErr("MoCA is already enabled\n");
+        RMH_PrintErr("MoCA must be stopped before setting RDK defaults\n");
         return RMH_INVALID_INTERNAL_STATE;
     }
 
-    /* Return to a known good state */
+    /* Return MoCA default settings */
     BRMH_RETURN_IF_FAILED(RMH_Self_RestoreDefaultSettings(handle));
 
     /***** Setup debug ***********************/
@@ -141,7 +171,6 @@ RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
             RMH_PrintMsg("Setting debug logging enabled\n");
         }
     }
-    /***** Done setup debug ***********************/
 
     /***** Setup device configuration ***********************/
 #ifdef RMH_START_DEFAULT_SINGLE_CHANEL
@@ -161,13 +190,18 @@ RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
     BRMH_RETURN_IF_FAILED(RMH_Self_SetTabooChannels(handle, RMH_START_DEFAULT_TABOO_START_CHANNEL, RMH_START_DEFAULT_TABOO_MASK));
 #endif
 
-#ifdef RMH_START_DEFAULT_TABOO_MASK
-#endif
-
+    if (RMH_SUCCESS == pRMH_RFC_GetBool(handle, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.PNC.Enable", &rfcBool)) {
+        /* RFC has an override for this value */
+        RMH_PrintMsg("[**RFC OVERRIDE**] Setting RMH_Self_SetPreferredNCEnabled: %s\n", rfcBool ? "TRUE" : "FALSE");
+        BRMH_RETURN_IF_FAILED(RMH_Self_SetPreferredNCEnabled(handle, rfcBool));
+    }
+    else {
+        /* Set the value based on compiled defaults. */
 #ifdef RMH_START_DEFAULT_PREFERRED_NC
-    RMH_PrintMsg("Setting RMH_Self_SetPreferredNCEnabled: %s\n", RMH_START_DEFAULT_PREFERRED_NC ? "TRUE" : "FALSE");
-    BRMH_RETURN_IF_FAILED(RMH_Self_SetPreferredNCEnabled(handle, RMH_START_DEFAULT_PREFERRED_NC));
+        RMH_PrintMsg("Setting RMH_Self_SetPreferredNCEnabled: %s\n", RMH_START_DEFAULT_PREFERRED_NC ? "TRUE" : "FALSE");
+        BRMH_RETURN_IF_FAILED(RMH_Self_SetPreferredNCEnabled(handle, RMH_START_DEFAULT_PREFERRED_NC));
 #endif
+    }
 
 #if RMH_START_SET_MAC_FROM_PROC
     if (RMH_START_SET_MAC_FROM_PROC) {
@@ -193,14 +227,6 @@ RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
                   to work around an interop issue on the Cisco Xb3. When that device is the NC of a mixed mode network it 
                   seems to have issues with a node going to standby */
     RMH_Power_SetStandbyMode(handle, RMH_POWER_MODE_M0_ACTIVE);
-
-    /***** Done setup device configuration ***********************/
-
-    /* Enable MoCA */
-    if (RMH_Self_SetEnabled(handle, true) != RMH_SUCCESS) {
-        RMH_PrintErr("Failed calling RMH_Self_SetEnabled!\n");
-        return RMH_FAILURE;
-    }
 
     return RMH_SUCCESS;
 }
@@ -752,6 +778,17 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStats(const RMH_Handle handle, const char*
         RMHApp__OUT_UINT32_NODELIST(handle, RMH_Stats_GetRxCorrectedErrors);
         RMH_PrintMsg("RMH_Stats_GetRxUncorrectedErrors:\n");
         RMHApp__OUT_UINT32_NODELIST(handle,RMH_Stats_GetRxUncorrectedErrors);
+
+        RMH_PrintMsg("\n= Admission ======\n");
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionAttempts);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionSucceeded);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionFailures);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsDeniedAsNC);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedNoResponse);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedChannelUnusable);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedT2Timeout);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedResyncLoss);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedPrivacyFullBlacklist);
     }
     else {
             RMH_PrintMsg("*** Stats not available while MoCA link is down ***\n");
@@ -774,6 +811,7 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintFlows(const RMH_Handle handle, const char*
     RMH_Result ret;
     RMH_MacAddress_t flowIds[64];
     size_t numFlowIds;
+    uint32_t numIngressFlows;
     char macStr[24];
     uint32_t leaseTime;
     RMH_LinkStatus linkStatus;
@@ -791,42 +829,51 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintFlows(const RMH_Handle handle, const char*
     if (ret == RMH_SUCCESS && linkStatus == RMH_LINK_STATUS_UP) {
         RMH_PrintMsg("= Local Flows ======\n");
         PRINT_STATUS_UINT32(RMH_PQoS_GetNumEgressFlows);
-        PRINT_STATUS_UINT32(RMH_PQoS_GetNumIngressFlows);
-        ret = RMH_PQoS_GetIngressFlowIds(handle, flowIds, sizeof(flowIds)/sizeof(flowIds[0]), &numFlowIds);
-        if ((ret == RMH_SUCCESS) && (numFlowIds != 0)) {
-            for (i=0; i < numFlowIds; i++) {
-                RMH_PrintMsg("= Flow %u =======\n", i);
-                RMH_PrintMsg("%-50s: %s\n", "Flow Id", RMH_MacToString(flowIds[i], macStr, sizeof(macStr)/sizeof(macStr[0])));
-                PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetIngressMac, flowIds[i]);
-                PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetEgressMac, flowIds[i]);
-                PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetDestination, flowIds[i]);
-                ret = RMH_PQoSFlow_GetLeaseTime(handle, flowIds[i], &leaseTime);
-                if (ret != RMH_SUCCESS) {
-                    RMH_PrintWrn("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", RMH_ResultToString(ret));
-                }
-                else {
-                    if (leaseTime) {
-                        RMH_PrintMsg("%-50s: %u\n", "RMH_PQoSFlow_GetLeaseTime", leaseTime);
-                        PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetLeaseTimeRemaining, flowIds[i]);
+        ret = RMH_PQoS_GetNumIngressFlows(handle, &numIngressFlows);
+        if (ret == RMH_SUCCESS) {
+            RMH_PrintMsg("%-50s: %u\n", "RMH_PQoS_GetNumIngressFlows", numIngressFlows);
+        }
+        else {
+            RMH_PrintMsg("%-50s: %s\n", "RMH_PQoS_GetNumIngressFlows", RMH_ResultToString(ret));
+        }
+
+        if (numIngressFlows) {
+            ret = RMH_PQoS_GetIngressFlowIds(handle, flowIds, sizeof(flowIds)/sizeof(flowIds[0]), &numFlowIds);
+            if ((ret == RMH_SUCCESS) && (numFlowIds != 0)) {
+                for (i=0; i < numFlowIds; i++) {
+                    RMH_PrintMsg("= Flow %u =======\n", i);
+                    RMH_PrintMsg("%-50s: %s\n", "Flow Id", RMH_MacToString(flowIds[i], macStr, sizeof(macStr)/sizeof(macStr[0])));
+                    PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetIngressMac, flowIds[i]);
+                    PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetEgressMac, flowIds[i]);
+                    PRINT_STATUS_MAC_FLOW(RMH_PQoSFlow_GetDestination, flowIds[i]);
+                    ret = RMH_PQoSFlow_GetLeaseTime(handle, flowIds[i], &leaseTime);
+                    if (ret != RMH_SUCCESS) {
+                        RMH_PrintWrn("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", RMH_ResultToString(ret));
                     }
                     else {
-                        RMH_PrintMsg("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", "INFINITE");
+                        if (leaseTime) {
+                            RMH_PrintMsg("%-50s: %u\n", "RMH_PQoSFlow_GetLeaseTime", leaseTime);
+                            PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetLeaseTimeRemaining, flowIds[i]);
+                        }
+                        else {
+                            RMH_PrintMsg("%-50s: %s\n", "RMH_PQoSFlow_GetLeaseTime", "INFINITE");
+                        }
                     }
-                }
 
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPeakDataRate, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetBurstSize, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowTag, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPacketSize, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxLatency, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetShortTermAvgRatio, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxRetry, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowPer, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetIngressClassificationRule, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetVLANTag, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetTotalTxPackets, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDSCPMoCA, flowIds[i]);
-                PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDFID, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPeakDataRate, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetBurstSize, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowTag, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetPacketSize, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxLatency, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetShortTermAvgRatio, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetMaxRetry, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetFlowPer, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetIngressClassificationRule, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetVLANTag, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetTotalTxPackets, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDSCPMoCA, flowIds[i]);
+                    PRINT_STATUS_UINT32_FLOW(RMH_PQoSFlow_GetDFID, flowIds[i]);
+                }
             }
         }
     }
