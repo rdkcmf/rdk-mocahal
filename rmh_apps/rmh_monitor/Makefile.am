@@ -28,5 +28,5 @@ bin_PROGRAMS = rmh_monitor
 
 # the sources to add to the library and to add to the source distribution
 rmh_monitor_SOURCES=rmh_monitor.c rmh_monitor_events.c rmh_monitor_util.c rmh_monitor_print.c
-rmh_monitor_LDADD = $(top_builddir)/rmh_lib/librdkmocahal.la -ldl -lpthread
-rmh_monitor_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface
+rmh_monitor_LDADD = $(top_builddir)/rmh_lib/librdkmocahal.la -ldl -lpthread -lrfcapi
+rmh_monitor_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface -I=/usr/include/wdmp-c

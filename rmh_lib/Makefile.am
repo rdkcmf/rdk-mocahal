@@ -33,5 +33,5 @@ librdkmocahal_la_SOURCES = \
     librmh_globals.c
 
 librdkmocahal_la_LDFLAGS= -Wl,--no-as-needed
-librdkmocahal_la_LIBADD = -ldl
-librdkmocahal_la_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface
+librdkmocahal_la_LIBADD = -ldl -lrfcapi
+librdkmocahal_la_CFLAGS = -Wall -I$(top_srcdir)/rmh_interface -I=/usr/include/wdmp-c -I=/usr/include

@@ -17,7 +17,12 @@
  * limitations under the License.
 */
 #include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "rmh_app.h"
+
+#define RDK_FILE_PATH_PREVENT_MOCA_START        "/opt/sysproperties/mocakillswitchenable"
+#define RDK_FILE_PATH_PREVENT_MOCA_START2       "/opt/mocakillswitchenable"
 
 #undef AS
 #define AS(x,y) #x,
@@ -123,17 +128,41 @@ RMH_Result RMHApp_Stop(const RMHApp *app) {
 
     RMH_Result ret=RMH_Self_GetEnabled(app->rmh, &started);
     if (!started) {
-        RMH_PrintErr("MoCA is already disabled\n");
+        RMH_PrintErr("MoCA is already stopped\n");
         return RMH_INVALID_INTERNAL_STATE;
     }
 
     ret=RMH_Self_SetEnabled(app->rmh, false);
     if (ret == RMH_SUCCESS) {
-        RMH_PrintMsg("MoCA successfully disabled\n");
+        RMH_PrintMsg("MoCA successfully stopped\n");
     }
     return ret;
 }
 
+RMH_Result RMHApp_Start(const RMHApp *app) {
+    bool started = false;
+
+    RMH_Result ret=RMH_Self_GetEnabled(app->rmh, &started);
+    if (started) {
+        RMH_PrintErr("MoCA is already started\n");
+        return RMH_INVALID_INTERNAL_STATE;
+    }
+
+    if (access(RDK_FILE_PATH_PREVENT_MOCA_START, F_OK ) != -1) {
+        RMH_PrintWrn("Refusing to start MoCA because the file %s exists!\n", RDK_FILE_PATH_PREVENT_MOCA_START);
+    }
+    else if (access(RDK_FILE_PATH_PREVENT_MOCA_START2, F_OK ) != -1) {
+        RMH_PrintWrn("Refusing to start MoCA because the file %s exists!\n", RDK_FILE_PATH_PREVENT_MOCA_START2);
+    }
+    else {
+        ret=RMH_Self_SetEnabled(app->rmh, true);
+        if (ret == RMH_SUCCESS) {
+            RMH_PrintMsg("MoCA successfully started\n");
+        }
+    }
+
+    return ret;
+}
 
 /***********************************************************
  * Input Fuctions
@@ -1114,7 +1143,6 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     /**************************************************************************************************************************************
      *                Handler Function              |                   API Name                          |     Alias (comma seperated)   *
      **************************************************************************************************************************************/
-    SET_API_HANDLER(RMHApp__HANDLE_ONLY,                        RMH_Self_SetEnabledRDK,                                 "start");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetEnabled,                                    "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Self_SetEnabled,                                    "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetMoCALinkUp,                                 "");
@@ -1139,6 +1167,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_INT32,                          RMH_Self_GetTxPowerLimit,                               "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_ARRAY,                   RMH_Self_GetSupportedFrequencies,                       "");
     SET_API_HANDLER(RMHApp__HANDLE_ONLY,                        RMH_Self_RestoreDefaultSettings,                        "");
+    SET_API_HANDLER(RMHApp__HANDLE_ONLY,                        RMH_Self_RestoreRDKDefaultSettings,                     "");
     SET_API_HANDLER(RMHApp__OUT_LINK_STATUS,                    RMH_Self_GetLinkStatus,                                 "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Self_GetQAM256Enabled,                              "");
     SET_API_HANDLER(RMHApp__OUT_BAND,                           RMH_Self_GetSupportedBand,                              "");
@@ -1336,5 +1365,6 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_DriverLogForever,                                "log_forever,logforever",                       "Enabled debug logging to a dedicated file that does not rotate. This will collect the best logs however if left enabled for long periods of time you can run out of space.");
     SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_EnableDriverDebugLogging,                        "log",                                          "Enable debug logging to the default MoCA log location. This is safe to leave enabled for long periods of time as this default log should be rotated");
     SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_DisableDriverDebugLogging,                       "log_stop,logstop",                             "Disable MoCA debug logging");
+    SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_Start,                                           "start",                                        "Shortcut to Enable MoCA");
     SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_Stop,                                            "stop",                                         "Shortcut to disable MoCA");
 }

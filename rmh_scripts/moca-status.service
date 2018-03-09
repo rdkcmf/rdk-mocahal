@@ -1,0 +1,14 @@
+[Unit]
+Description=RMH MoCA Logging
+After=local-fs.target nvram.service moca-driver.service moca.service
+Requires=moca-driver.service moca.service
+PartOf=mocadriver.service
+
+[Service]
+ExecStart=/usr/bin/rmh_monitor
+Type=simple
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

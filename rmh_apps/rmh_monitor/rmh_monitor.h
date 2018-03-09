@@ -52,7 +52,6 @@ typedef struct RMHMonitor_CallbackEvent {
  */
 typedef struct RMHMonitor_NodeInfo {
     bool joined;                                    /* Set to true if this node has actively joined the network */
-    bool selfNode;                                  /* Set to true if this node is the local device */
     bool preferredNC;                               /* Set to true if this node is a preferred NC */
     RMH_MacAddress_t mac;                           /* The MAC address of the device */
     RMH_MoCAVersion mocaVersion;                    /* The highest version of MoCA supported by this node */
@@ -68,8 +67,6 @@ typedef struct RMHMonitor_NetworkStatus {
     uint32_t ncNodeId;                              /* The node ID of the NC */
     bool ncNodeIdValid;                             /* Set to true if the value of 'ncNodeId' is valid */
     uint32_t selfNodeId;                            /* The node ID of the local device */
-    bool selfNodeIdValid;                           /* Set to true if the value of 'selfNodeId' is valid */
-    RMHMonitor_NodeInfo self;                       /* Node info for the local device */
     RMHMonitor_NodeInfo nodes[RMH_MAX_MOCA_NODES];  /* Node info for all remote devices */
 } RMHMonitor_NetworkStatus;
 
@@ -86,17 +83,21 @@ typedef struct RMHMonitor {
                                                     /* The queue where events are stored while they are moved to the event thread */
     pthread_mutex_t eventQueueProtect;              /* A mutex to ensure safe enqueue/dequeue of events */
     RMHMonitor_hSemaphore eventNotify;              /* A semaphore to notify the event thread there is work to be done */
+    struct timeval lastPrint;                       /* The time the last message was print to the log */
 
-    bool mocaEnabled;                               /* Indicates if MoCA is enabled on this device */
-    bool mocaEnabledValid;                          /* Set to true if the value of 'mocaEnabled' is valid */
     RMH_LinkStatus linkStatus;                      /* The current state of the MoCA link for this device */
     bool linkStatusValid;                           /* Set to true if the value of 'linkStatus' is valid */
     RMHMonitor_NetworkStatus netStatus;             /* The current state of the MoCA network */
+    uint32_t reconnectSeconds;                      /* Number of seconds to wait between attempts to reconnect to MoCA */
 
     RMH_LogLevel apiLogLevel;                       /* The logging level to print from the app and RMH */
     RMH_LogLevel driverLogLevel;                    /* The logging level to print from the MoCA driver itself */
     const char* appPrefix;                          /* A fixed string to prepend to every line */
-    bool noPrintTimestamp;                          /* Set to true to avoid prefixing a each output line with a timestamp */
+    bool userSetTimestamps;                         /* Set to true to note the user explicitly set printTimestamp */
+    bool printTimestamp;                            /* Set to true to prefix each output line with a timestamp */
+    bool serviceMode;                               /* Set to true if the app is being started as a service. This will allow us to do things like systemd notify */
+    const char *out_file_name;                      /* The name of the file to write output to */
+    FILE* out_file;                                 /* The handle of the file to write output to */
 } RMHMonitor;
 
 
@@ -111,12 +112,13 @@ typedef struct RMHMonitor {
 void RMH_Print_Raw(RMHMonitor *app, struct timeval *time, const char*fmt, ...);
 #define RMH_Print(app, time, level, logPrefix, fmt, ...) { \
     if (app && (app->apiLogLevel & level) == level) { \
-        if (time) { \
+        struct timeval now; \
+        gettimeofday(&now, NULL); \
+        app->lastPrint=now; \
+        if (time != NULL) { \
             RMH_Print_Raw(app, time, fmt, ##__VA_ARGS__); \
         } \
         else { \
-            struct timeval now; \
-            gettimeofday(&now, NULL); \
             RMH_Print_Raw(app, &now, fmt, ##__VA_ARGS__); \
         } \
     } \
@@ -134,6 +136,6 @@ void RMHMonitor_Queue_Enqueue(RMHMonitor *app, const enum RMH_Event event, const
 
 
 void RMHMonitor_Event_Thread(void * context);
-
+void RMHMonitor_RMHCallback(const enum RMH_Event event, const struct RMH_EventData *eventData, void* userContext);
 
 #endif
