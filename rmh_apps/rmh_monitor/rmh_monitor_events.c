@@ -31,6 +31,11 @@
 #define RMH_MONITOR_STATUS_PING_MIN 2
 
 
+/**
+ * The amount of time with no messages printed to the log that we will consider the network 'stable'
+ */
+#define RMH_MONITOR_MIN_NETWORK_STABALIZE_SEC 10
+
 
 /*******************************************************************************************************************
 *
@@ -38,6 +43,46 @@
 *
 *    These fuctions are used to track events and control how they are managed.
 *******************************************************************************************************************/
+
+/**
+ * This function is called to update the self node value
+*/
+static inline
+bool RMHMonitor_Event_SelfNodeId(RMHMonitor *app, struct timeval *time, const uint32_t nodeId) {
+    char printBuff[32];
+    RMH_Result ret;
+
+    /* Ensure the link is up soemthing's actually changed */
+    if ((app->linkStatus != RMH_LINK_STATUS_UP) ||
+        (app->netStatus.selfNodeId == nodeId && app->netStatus.nodes[app->netStatus.selfNodeId].joined)) {
+        return false;
+    }
+
+    /* Get some information about the node */
+    ret=RMH_Interface_GetMac(app->rmh, &app->netStatus.nodes[nodeId].mac);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("RMH_Interface_GetMac failed -- %s!\n", RMH_ResultToString(ret));
+    }
+
+    ret=RMH_Self_GetPreferredNCEnabled(app->rmh, &app->netStatus.nodes[nodeId].preferredNC);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("RMH_Self_GetPreferredNCEnabled failed -- %s!\n", RMH_ResultToString(ret));
+    }
+
+    ret=RMH_Self_GetHighestSupportedMoCAVersion(app->rmh, &app->netStatus.nodes[nodeId].mocaVersion);
+    if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("RMH_Self_GetHighestSupportedMoCAVersion failed -- %s!\n", RMH_ResultToString(ret));
+    }
+
+    RMH_PrintMsgT(time, "Node:%02u %s MoCA:%s PNC:%s **Self Node\n", nodeId, RMH_MoCAVersionToString(app->netStatus.nodes[nodeId].mocaVersion),
+                                                        RMH_MacToString(app->netStatus.nodes[nodeId].mac, printBuff, sizeof(printBuff)),
+                                                        app->netStatus.nodes[nodeId].preferredNC ? "TRUE" : "FALSE");
+
+    app->netStatus.selfNodeId=nodeId;
+    app->netStatus.nodes[nodeId].joined=true;
+    return true;
+}
+
 
 /**
  * This function is called when we expect that a node has joined the network
@@ -95,60 +140,16 @@ bool RMHMonitor_Event_DropNode(RMHMonitor *app, struct timeval *time, const uint
     }
 
     if (app->netStatus.nodes[nodeId].joined) {
-        RMH_PrintMsgT(time, "Node:%02u %s MoCA:%s PNC:%s\n", nodeId, RMH_MoCAVersionToString(app->netStatus.nodes[nodeId].mocaVersion),
+        RMH_PrintMsgT(time, "Node:%02u %s MoCA:%s PNC:%s %s\n", nodeId, RMH_MoCAVersionToString(app->netStatus.nodes[nodeId].mocaVersion),
                                                             RMH_MacToString(app->netStatus.nodes[nodeId].mac, printBuff, sizeof(printBuff)),
-                                                            app->netStatus.nodes[nodeId].preferredNC ? "TRUE" : "FALSE");
-    }
-    else if (app->netStatus.selfNodeId == nodeId) {
-        RMH_PrintMsgT(time, "Node:%02u %s MoCA:%s PNC:%s **Self node\n", nodeId, RMH_MoCAVersionToString(app->netStatus.self.mocaVersion),
-                                                                               RMH_MacToString(app->netStatus.self.mac, printBuff, sizeof(printBuff)),
-                                                                               app->netStatus.self.preferredNC ? "TRUE" : "FALSE");
+                                                            app->netStatus.nodes[nodeId].preferredNC ? "TRUE" : "FALSE",
+                                                            app->netStatus.selfNodeId == nodeId ? "**Self node" : "");
     }
     else {
         RMH_PrintWrn("Got 'drop' notification for node ID %u which is not on the network\n", nodeId);
     }
 
     app->netStatus.nodes[nodeId].joined=false;
-    return true;
-}
-
-
-/**
- * This function is called to update the self node value
-*/
-static inline
-bool RMHMonitor_Event_SelfNodeId(RMHMonitor *app, struct timeval *time, const uint32_t selfNodeId) {
-    char printBuff[32];
-    RMH_Result ret;
-
-    /* Ensure the link is up soemthing's actually changed */
-    if ((app->linkStatus != RMH_LINK_STATUS_UP) ||
-        (app->netStatus.selfNodeIdValid && app->netStatus.selfNodeId == selfNodeId)) {
-        return false;
-    }
-
-    app->netStatus.selfNodeId=selfNodeId;
-    app->netStatus.selfNodeIdValid =true;
-
-    /* Get some information about the node */
-    ret=RMH_Interface_GetMac(app->rmh, &app->netStatus.self.mac);
-    if (ret != RMH_SUCCESS) {
-        RMH_PrintErr("RMH_Interface_GetMac failed -- %s!\n", RMH_ResultToString(ret));
-    }
-
-    ret=RMH_Self_GetPreferredNCEnabled(app->rmh, &app->netStatus.self.preferredNC);
-    if (ret != RMH_SUCCESS) {
-        RMH_PrintErr("RMH_Self_GetPreferredNCEnabled failed -- %s!\n", RMH_ResultToString(ret));
-    }
-
-    ret=RMH_Self_GetHighestSupportedMoCAVersion(app->rmh, &app->netStatus.self.mocaVersion);
-    if (ret != RMH_SUCCESS) {
-        RMH_PrintErr("RMH_Self_GetHighestSupportedMoCAVersion failed -- %s!\n", RMH_ResultToString(ret));
-    }
-
-    RMH_PrintMsgT(time, "Node:%02u %s MoCA:%s PNC:%s **Self Node\n", selfNodeId, RMH_MoCAVersionToString(app->netStatus.self.mocaVersion),
-                                                                            RMH_MacToString(app->netStatus.self.mac, printBuff, sizeof(printBuff)),
-                                                                            app->netStatus.self.preferredNC ? "TRUE" : "FALSE");
     return true;
 }
 
@@ -231,6 +232,9 @@ bool RMHMonitor_Event_LinkStatusChanged(RMHMonitor *app, struct timeval *time, c
         if (ret != RMH_SUCCESS) {
             RMH_PrintErr("RMH_Interface_GetMac failed -- %s!\n", RMH_ResultToString(ret));
         }
+        else {
+            RMHMonitor_Event_SelfNodeId(app, time, nodeId);
+        }
 
         ret=RMH_Network_GetRemoteNodeIds(app->rmh, &nodeIds);
         if (ret != RMH_SUCCESS) {
@@ -269,58 +273,27 @@ bool RMHMonitor_Event_LinkStatusChanged(RMHMonitor *app, struct timeval *time, c
 
 
 /**
- * This function is called when we expect that MoCA 'enabled' status has changed
-*/
-static inline
-bool RMHMonitor_Update_ReportMoCAEnabled(RMHMonitor *app, struct timeval *time, const bool mocaEnabled) {
-    /* Ensure soemthing's actually changed */
-    if (app->mocaEnabledValid && app->mocaEnabled == mocaEnabled) {
-        return false;
-    }
-
-    /* Update our internal moca enabled state and check link status */
-    app->mocaEnabled = mocaEnabled;
-    app->mocaEnabledValid=true;
-    if (app->mocaEnabled) {
-        RMH_LinkStatus linkStatus;
-        RMH_Result ret;
-
-        ret=RMH_Self_GetLinkStatus(app->rmh, &linkStatus);
-        if (ret == RMH_SUCCESS) {
-            RMHMonitor_Event_LinkStatusChanged(app, time, linkStatus);
-        }
-        else {
-            RMH_PrintErr("RMH_Self_GetLinkStatus failed -- %s!\n", RMH_ResultToString(ret));
-        }
-    }
-    else {
-        RMH_PrintMsgT(time, "** MoCA is disabled **\n");
-        RMHMonitor_Event_LinkStatusChanged(app, time, RMH_LINK_STATUS_DISABLED);
-    }
-
-    return true;
-}
-
-
-/**
  * This function should print a single line status. Mainly to indicate the logger is still alive
  */
 static
 void RMHMonitor_Event_PrintPing(RMHMonitor *app, struct timeval *time) {
-    if (!app->mocaEnabled) {
-        RMH_PrintMsgT(time, "** MoCA is disabled **\n");
+    bool mocaEnabled;
+    if (RMH_Self_GetEnabled(app->rmh, &mocaEnabled) != RMH_SUCCESS || !mocaEnabled) {
+        RMH_PrintMsgT(time, "Link:DISABLED\n");
     }
     else if (app->linkStatus != RMH_LINK_STATUS_UP) {
-        RMH_PrintMsgT(time, "** MoCA link is down **\n");
+        RMH_PrintMsgT(time, "Link:DOWN\n");
     }
     else {
         uint32_t numNodes;
         uint32_t ncNode;
         uint32_t selfNode;
+        uint32_t uptime;
         RMH_Network_GetNumNodes(app->rmh, &numNodes);
         RMH_Network_GetNodeId(app->rmh, &selfNode);
         RMH_Network_GetNCNodeId(app->rmh, &ncNode);
-        RMH_PrintMsgT(time, "Link:UP Nodes:%u Self:%u NC:%u\n", numNodes, selfNode, ncNode);
+        RMH_Network_GetLinkUptime(app->rmh, &uptime);
+        RMH_PrintMsgT(time, "Link:UP [%02uh:%02um:%02us] Nodes:%u Self:%u NC:%u\n", uptime/3600, (uptime%3600)/60, uptime%60, numNodes, selfNode, ncNode);
     }
 }
 
@@ -330,10 +303,8 @@ void RMHMonitor_Event_PrintPing(RMHMonitor *app, struct timeval *time) {
  */
 static
 void RMHMonitor_Event_PrintFull(RMHMonitor *app, struct timeval *time) {
-    if (!app->mocaEnabled) {
-        RMH_PrintMsgT(time, "** MoCA is disabled **\n");
-    }
-    else {
+    bool mocaEnabled;
+    if (RMH_Self_GetEnabled(app->rmh, &mocaEnabled) == RMH_SUCCESS && mocaEnabled) {
         RMH_PrintMsg("==============================================================================================================================\n");
         RMH_Log_PrintStatus(app->rmh, NULL);
         RMH_PrintMsg("==============================================================================================================================\n");
@@ -354,51 +325,84 @@ void RMHMonitor_Event_Thread(void * context) {
     RMHMonitor *app=(RMHMonitor *)context;
     RMHMonitor_CallbackEvent *cbE;
     RMH_Result ret;
+    bool networkStable=false;
     bool mocaEnabled;
     char printBuff[128];
     bool printStatus = false;
     struct timeval now;
     struct timeval lastStatusPrint;
     struct timeval lastStatusPing;
+    int threadRet=1;
 
-    /* Set the prefix to indicate we're currently in startup */
-    app->appPrefix="[  INIT  ] ";
+    /* Reset internal status */
+    app->linkStatusValid=false;
+    memset(&app->netStatus, 0, sizeof(app->netStatus));
 
-    /* Update MoCA enabled */
-    if (RMH_Self_GetEnabled(app->rmh, &mocaEnabled) == RMH_SUCCESS) {
-        RMHMonitor_Update_ReportMoCAEnabled(app, &now, mocaEnabled);
+    /* Validate the handle */
+    ret = RMH_ValidateHandle(app->rmh);
+    if (ret == RMH_UNIMPLEMENTED || ret == RMH_NOT_SUPPORTED) {
+        RMH_PrintWrn("RMH_ValidateHandle returned %s. We will not be able to monitor to make sure the handle remains valid\n", RMH_ResultToString(ret));
+    }
+    else if (ret != RMH_SUCCESS) {
+        RMH_PrintErr("The RMH handle %p seems to no longer be valid. Aborting\n", app->rmh);
+        goto exit_err;
     }
 
     /* Dump a full status to get things started */
     gettimeofday(&now, NULL);
+
+    if (RMH_Self_GetEnabled(app->rmh, &mocaEnabled) != RMH_SUCCESS) {
+        goto exit_err;
+    }
+    else if (mocaEnabled) {
+        RMH_LinkStatus linkStatus;
+        if (RMH_Self_GetLinkStatus(app->rmh, &linkStatus) == RMH_SUCCESS) {
+            RMHMonitor_Event_LinkStatusChanged(app, &now, linkStatus);
+        }
+    }
+    else {
+        RMHMonitor_Event_LinkStatusChanged(app, &now, RMH_LINK_STATUS_DISABLED);
+    }
     RMHMonitor_Event_PrintFull(app, &now);
+
+    /* Looks like we're connected with a valid handle, reset the timer */
+    app->reconnectSeconds=0;
+
     app->appPrefix=NULL;
     lastStatusPrint=now;
     lastStatusPing=now;
 
     /* Loop forever here until the thread is no longer running */
     while (app->eventThreadRunning) {
-
-        /* Wait for a MoCA event notification.Otherwise timeout every 5 seconds and check if there's any other pending work to do. */
-        ret=RMHMonitor_Semaphore_WaitTimeout(app->eventNotify, 5000);
+        ret=RMHMonitor_Semaphore_WaitTimeout(app->eventNotify, 2000);
         if (ret == RMH_FAILURE) {
             RMH_PrintErr("Failed in RMHMonitor_Semaphore_WaitTimeout\n");
         }
 
         gettimeofday(&now, NULL);
 
+        ret = RMH_ValidateHandle(app->rmh);
+        if (ret != RMH_SUCCESS && ret != RMH_UNIMPLEMENTED && ret != RMH_NOT_SUPPORTED) {
+            RMH_PrintErr("The RMH handle %p seems to no longer be valid. Aborting\n", app->rmh);
+            goto exit_err;
+        }
+
+        /* We determine that the network is 'stable' when there hasn't been anything print to the 
+         * log in at least RMH_MONITOR_MIN_NETWORK_STABALIZE seconds. We can't just use the semaphore
+         * timeout because we might get repeated messages from the MoCA driver which aren't being print
+         * to the log (no change). In that case it will look like the log is frozen.
+         */
+        networkStable=(now.tv_sec-app->lastPrint.tv_sec) > RMH_MONITOR_MIN_NETWORK_STABALIZE_SEC;
+
         /* We want to first check if we have any pending prints. This will happen because either
          *    1) An event occurred which indicated a dump should happen
          *    2) It has been RMH_MONITOR_STATUS_DUMP_MIN minutes has passed since the last status dump
          *
-         *   Note: When an event occurs and requests a status dump, it doesn't happen immediately. We will wait for
-         *         a timeout event on the semaphore. This ensure that the network has had some amount of stabillity
-         *         for a few seconds and we won't get flooded with large status dumps.
-         *
-         *   If we aren't printing a full status we will print a ping message every RMH_MONITOR_STATUS_PING_MIN minutes
+         *   Note: Before we print anything make sure the network is stable. This is to make sure we don't
+         *         flood logs with status updates if the network is changing frequently.
          */
         if ((now.tv_sec-lastStatusPrint.tv_sec) > RMH_MONITOR_STATUS_DUMP_MIN*60 ||
-             (printStatus && ret==RMH_TIMEOUT)) {
+             (printStatus && networkStable)) {
             /* Dump the full status and update the last print time */
             RMHMonitor_Event_PrintFull(app, &now);
             app->appPrefix=NULL;
@@ -406,7 +410,7 @@ void RMHMonitor_Event_Thread(void * context) {
             lastStatusPing=now;
             printStatus=false;
         }
-        else if (ret==RMH_TIMEOUT && (lastStatusPing.tv_sec == 0 || (now.tv_sec-lastStatusPing.tv_sec) > RMH_MONITOR_STATUS_PING_MIN*60)) {
+        else if (networkStable && (lastStatusPing.tv_sec == 0 || (now.tv_sec-lastStatusPing.tv_sec) > RMH_MONITOR_STATUS_PING_MIN*60)) {
             /* Dump the ping status and update the last print time */
             RMHMonitor_Event_PrintPing(app, &now);
             lastStatusPing=now;
@@ -459,4 +463,11 @@ void RMHMonitor_Event_Thread(void * context) {
             RMHMonitor_Queue_Dequeue(app);
         }
     }
+
+    ret=0;
+    pthread_exit(&threadRet);
+
+exit_err:
+    ret=1;
+    pthread_exit(&threadRet);
 }

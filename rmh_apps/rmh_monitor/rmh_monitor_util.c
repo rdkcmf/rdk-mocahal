@@ -28,6 +28,7 @@ RMHMonitor_hSemaphore RMHMonitor_Semaphore_Create() {
 
     eventHandle=malloc(sizeof(*eventHandle));
     if (!eventHandle) return NULL;
+    memset(eventHandle, 0, sizeof(eventHandle));
 
     if (pthread_mutex_init(&eventHandle->lock, NULL) != 0) {
         free(eventHandle);
@@ -43,8 +44,11 @@ RMHMonitor_hSemaphore RMHMonitor_Semaphore_Create() {
 }
 
 void RMHMonitor_Semaphore_Destroy(RMHMonitor_hSemaphore eventHandle) {
-    pthread_mutex_destroy (&eventHandle->lock);
-    pthread_cond_destroy (&eventHandle->cond);
+    if (eventHandle) {
+        pthread_mutex_destroy (&eventHandle->lock);
+        pthread_cond_destroy (&eventHandle->cond);
+        free(eventHandle);
+    }
 }
 
 RMH_Result RMHMonitor_Semaphore_Reset(RMHMonitor_hSemaphore eventHandle) {
@@ -114,6 +118,8 @@ exit:
 */
 void RMHMonitor_Queue_Enqueue(RMHMonitor *app, const enum RMH_Event event, const struct RMH_EventData *eventData) {
     RMHMonitor_CallbackEvent *cbE = malloc(sizeof(RMHMonitor_CallbackEvent));
+    char printBuff[128];
+
     if (cbE) {
         /* Enqueue the event and the time it occurred */
         gettimeofday(&cbE->eventTime, NULL);
@@ -123,6 +129,7 @@ void RMHMonitor_Queue_Enqueue(RMHMonitor *app, const enum RMH_Event event, const
         /* Lock the queue before we modify it */
         pthread_mutex_lock(&app->eventQueueProtect);
         TAILQ_INSERT_HEAD(&app->eventQueue, cbE, entries);
+        RMH_PrintDbg("%s[%u] ENQUEUED event '%s' in %p\n", __FUNCTION__, __LINE__, RMH_EventToString(cbE->event, printBuff, sizeof(printBuff)/sizeof(printBuff[0])), cbE);
         pthread_mutex_unlock(&app->eventQueueProtect);
         RMHMonitor_Semaphore_Signal(app->eventNotify);
     }
@@ -134,12 +141,14 @@ void RMHMonitor_Queue_Enqueue(RMHMonitor *app, const enum RMH_Event event, const
 */
 void RMHMonitor_Queue_Dequeue(RMHMonitor *app) {
     RMHMonitor_CallbackEvent *cbE;
+    char printBuff[128];
 
     /* Remove the tail of the queue. Lock the queue before we modify it */
     pthread_mutex_lock(&app->eventQueueProtect);
     cbE=app->eventQueue.tqh_first;
     if (cbE) {
         TAILQ_REMOVE(&app->eventQueue, app->eventQueue.tqh_first, entries);
+        RMH_PrintDbg("%s[%u] DEQUEUED event '%s' in %p\n", __FUNCTION__, __LINE__, RMH_EventToString(cbE->event, printBuff, sizeof(printBuff)/sizeof(printBuff[0])), cbE);
         free(cbE);
     }
     pthread_mutex_unlock(&app->eventQueueProtect);

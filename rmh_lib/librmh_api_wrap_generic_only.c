@@ -24,9 +24,12 @@
 #include "librmh.h"
 #include "rdk_moca_hal.h"
 
-#define RDK_FILE_PATH_VERSION               "/version.txt"
-#define RDK_FILE_PATH_DEBUG_ENABLE          "/opt/rmh_start_enable_debug"
-#define RDK_FILE_PATH_DEBUG_FOREVER_ENABLE  "/opt/rmh_start_enable_debug_forever"
+#define RDK_FILE_PATH_VERSION                   "/version.txt"
+#define RDK_FILE_PATH_DEBUG_ENABLE              "/opt/rmh_start_enable_debug"
+#define RDK_FILE_PATH_DEBUG_FOREVER_ENABLE      "/opt/rmh_start_enable_debug_forever"
+#define RDK_FILE_PATH_PREVENT_MOCA_START        "/opt/sysproperties/mocakillswitchenable"
+#define RDK_FILE_PATH_PREVENT_MOCA_START2       "/opt/mocakillswitchenable"
+
 #define LOCAL_MODULATION_PRINT_LINE_SIZE 256
 
 static
@@ -182,7 +185,7 @@ RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
         char macString[32];
         uint32_t macValsRead;
         FILE *file;
-        BRMH_RETURN_IF_FAILED(RMH_Interface_GetName(handle, ethName, sizeof(ethName));
+        BRMH_RETURN_IF_FAILED(RMH_Interface_GetName(handle, ethName, sizeof(ethName)));
         sprintf(ifacePath, "/sys/class/net/%s/address", ethName);
 		file = fopen( ifacePath, "r");
         BRMH_RETURN_IF(file == NULL, RMH_FAILURE);
@@ -196,9 +199,17 @@ RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
     /***** Done setup device configuration ***********************/
 
     /* Enable MoCA */
-    if (RMH_Self_SetEnabled(handle, true) != RMH_SUCCESS) {
-        RMH_PrintErr("Failed calling RMH_Self_SetEnabled!\n");
-        return RMH_FAILURE;
+    if (access(RDK_FILE_PATH_PREVENT_MOCA_START, F_OK ) != -1) {
+        RMH_PrintWrn("Refusing to actually start MoCA because the file %s exists!\n", RDK_FILE_PATH_PREVENT_MOCA_START);
+    }
+    else if (access(RDK_FILE_PATH_PREVENT_MOCA_START2, F_OK ) != -1) {
+        RMH_PrintWrn("Refusing to actually start MoCA because the file %s exists!\n", RDK_FILE_PATH_PREVENT_MOCA_START2);
+    }
+    else {
+        if (RMH_Self_SetEnabled(handle, true) != RMH_SUCCESS) {
+            RMH_PrintErr("Failed calling RMH_Self_SetEnabled!\n");
+            return RMH_FAILURE;
+        }
     }
 
     return RMH_SUCCESS;
@@ -830,7 +841,13 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintModulation(const RMH_Handle handle, const 
     RMH_NodeList_Uint32_t nodes;
     RMH_SubcarrierProfile p[4][512];
     uint32_t pUsed[4];
+    RMH_LinkStatus linkStatus;
 
+    ret=RMH_Self_GetLinkStatus(handle, &linkStatus);
+    if (ret != RMH_SUCCESS || linkStatus != RMH_LINK_STATUS_UP) {
+        RMH_PrintMsg("*** Modulation information not available while MoCA link is down ***\n");
+        return ret;
+    }
 
     ret = RMH_Network_GetNodeId(handle, &selfNodeId);
     if (ret != RMH_SUCCESS) {

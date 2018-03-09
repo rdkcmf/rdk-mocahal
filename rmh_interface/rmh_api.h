@@ -83,6 +83,33 @@ TRUE,
 
 
 
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_ValidateHandle(RMH_Handle handle),
+
+/* API Name */
+RMH_ValidateHandle,
+
+/* Description */
+"Returns RMH_SUCCESS if the handle is still valid.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             RMH_Handle,
+        "The RMH handle as returned by RMH_Initialize")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Core"
+/********************************************************************************************************************/
+)
+
+
+
 RMH_API_IMPLEMENTATION_GENERIC_THEN_SOC(
 /********************************************************************************************************************/
 /* API Declaration */

@@ -51,7 +51,7 @@ void RMH_Print_Raw(RMHMonitor *app, struct timeval *time, const char*fmt, ...) {
         char timeBuf[64];
 
         /* We have something to print, check if we need to also be printing a timestamp */
-        if (!app->noPrintTimestamp) {
+        if (app->printTimestamp) {
             /* Timestamp is needed, convert the timestamp we were passed to a readable string */
             tm_info = localtime(&time->tv_sec);
             snprintf(timeBuf, sizeof(timeBuf), "%02d.%02d.%02d %02d:%02d:%02d:%03ld ", tm_info->tm_year + 1900, tm_info->tm_mon + 1, tm_info->tm_mday, tm_info->tm_hour, tm_info->tm_min, tm_info->tm_sec, time->tv_usec/1000);
@@ -68,7 +68,7 @@ void RMH_Print_Raw(RMHMonitor *app, struct timeval *time, const char*fmt, ...) {
         while(printString[i] != '\0') {
             if (newLine) {
                 /* This is a new line, start by printing the timestamp and prefix */
-                if (!app->noPrintTimestamp) fputs(timeBuf, stdout);
+                if (app->printTimestamp) fputs(timeBuf, stdout);
                 if (app->appPrefix) fputs(app->appPrefix, stdout);
                 newLine=false;
             }
@@ -109,4 +109,6 @@ void RMH_Print_Raw(RMHMonitor *app, struct timeval *time, const char*fmt, ...) {
         fputs("\nInternal print error\n", stdout);
         newLine=true;
     }
+
+    fflush(stdout);
 }

@@ -48,7 +48,8 @@ RMH_Handle RMH_Initialize(const RMH_EventCallback eventCB, void* userContext) {
         else {
             handle->handle = apiFunc(eventCB, userContext);
             if (!handle->handle) {
-                RMH_PrintErr("Failed when initializing the SoC MoCA Hal! APIs will return RMH_INVALID_INTERNAL_STATE!\n");
+                RMH_PrintErr("Failed when initializing the SoC MoCA Hal!\n");
+                goto error_out;
             }
         }
     }

@@ -27,8 +27,9 @@ const char * const RMH_LogLevelStr[] = { ENUM_RMH_LogLevel };
 /***********************************************************
  * Local API Functions
  ***********************************************************/
-RMH_Result RMHApp_DisableDebugLogging(const RMHApp *app) {
+RMH_Result RMHApp_DisableDriverDebugLogging(const RMHApp *app) {
     char fileName[128];
+    RMH_LogLevel logLevel;
 
     if (RMH_Log_GetDriverFilename(app->rmh, fileName, sizeof(fileName)) == RMH_SUCCESS) {
         RMH_PrintMsg("MoCA stopping logging to %s\n", fileName);
@@ -39,31 +40,54 @@ RMH_Result RMHApp_DisableDebugLogging(const RMHApp *app) {
         }
     }
 
-    if (RMH_Log_SetDriverLevel(app->rmh, RMH_LOG_DEFAULT) != RMH_SUCCESS) {
+    if (RMH_Log_GetDriverLevel(app->rmh, &logLevel) != RMH_SUCCESS) {
+        RMH_PrintErr("Failed to get driver log level!\n");
+        return RMH_FAILURE;
+    }
+
+    if ((~logLevel & RMH_LOG_DEBUG) == RMH_LOG_DEBUG) {
+        RMH_PrintMsg("MoCA driver debug logging already disabled\n");
+        return RMH_SUCCESS;
+    }
+
+    if (RMH_Log_SetDriverLevel(app->rmh, (logLevel & ~RMH_LOG_DEBUG)) != RMH_SUCCESS) {
         RMH_PrintErr("Failed to set log level to exclude RMH_LOG_DEFAULT!\n");
         return RMH_FAILURE;
     }
-    RMH_PrintMsg("MoCA debug logging disabled\n");
+    RMH_PrintMsg("MoCA driver debug logging disabled\n");
 
     return RMH_SUCCESS;
 }
 
-RMH_Result RMHApp_EnableDebugLogging(const RMHApp *app) {
+RMH_Result RMHApp_EnableDriverDebugLogging(const RMHApp *app) {
     char logFileName[1024];
+    RMH_LogLevel logLevel;
+
     if (RMH_Log_GetDriverFilename(app->rmh, logFileName, sizeof(logFileName)) == RMH_SUCCESS) {
         RMH_PrintMsg("Logging to '%s'\n", logFileName);
     }
 
-    if (RMH_Log_SetDriverLevel(app->rmh, RMH_LOG_DEFAULT | RMH_LOG_DEBUG) != RMH_SUCCESS) {
-        RMH_PrintErr("Failed to set log level to include RMH_LOG_DEBUG!\n");
+    if (RMH_Log_GetDriverLevel(app->rmh, &logLevel) != RMH_SUCCESS) {
+        RMH_PrintErr("Failed to get driver log level!\n");
         return RMH_FAILURE;
     }
-    RMH_PrintMsg("MoCA debug logging enabled\n");
+
+    if ((logLevel & RMH_LOG_DEBUG) == RMH_LOG_DEBUG) {
+        RMH_PrintMsg("MoCA driver debug logging already enabled\n");
+        return RMH_SUCCESS;
+    }
+
+    if (RMH_Log_SetDriverLevel(app->rmh, (logLevel | RMH_LOG_DEBUG)) != RMH_SUCCESS) {
+        RMH_PrintErr("Failed to set driver log level to include RMH_LOG_DEBUG!\n");
+        return RMH_FAILURE;
+    }
+    RMH_PrintMsg("MoCA driver debug logging enabled\n");
     return RMH_SUCCESS;
 }
 
-RMH_Result RMHApp_LogForever(const RMHApp *app) {
+RMH_Result RMHApp_DriverLogForever(const RMHApp *app) {
     char logFileName[1024];
+    RMH_LogLevel logLevel;
 
     if (RMH_Log_GetDriverFilename(app->rmh, logFileName, sizeof(logFileName)) == RMH_SUCCESS) {
         RMH_PrintMsg("Stop logging to '%s'.\n", logFileName);
@@ -79,9 +103,16 @@ RMH_Result RMHApp_LogForever(const RMHApp *app) {
         return RMH_FAILURE;
     }
 
-    if (RMH_Log_SetDriverLevel(app->rmh, RMH_LOG_DEFAULT | RMH_LOG_DEBUG) != RMH_SUCCESS) {
-        RMH_PrintErr("Failed to set log level to RMH_LOG_DEBUG!\n");
+    if (RMH_Log_GetDriverLevel(app->rmh, &logLevel) != RMH_SUCCESS) {
+        RMH_PrintErr("Failed to get driver log level!\n");
         return RMH_FAILURE;
+    }
+
+    if ((logLevel & RMH_LOG_DEBUG) != RMH_LOG_DEBUG) {
+        if (RMH_Log_SetDriverLevel(app->rmh, (logLevel | RMH_LOG_DEBUG)) != RMH_SUCCESS) {
+            RMH_PrintErr("Failed to set log level to RMH_LOG_DEBUG!\n");
+            return RMH_FAILURE;
+        }
     }
     RMH_PrintMsg("Started logging enabled to '%s'.\n", logFileName);
     return RMH_SUCCESS;
@@ -1252,8 +1283,8 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     /*****************************************************************************************************************************************************************************************
      *                Handler Function              |                   API Name                          |     Alias (comma seperated)                      |                  Description  *
      *****************************************************************************************************************************************************************************************/
-    SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_LogForever,                                      "log_forever,logforever",                       "Enabled debug logging to a dedicated file that does not rotate. This will collect the best logs however if left enabled for long periods of time you can run out of space.");
-    SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_EnableDebugLogging,                              "log",                                          "Enable debug logging to the default MoCA log location. This is safe to leave enabled for long periods of time as this default log should be rotated");
-    SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_DisableDebugLogging,                             "log_stop,logstop",                             "Disable MoCA debug logging");
+    SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_DriverLogForever,                                "log_forever,logforever",                       "Enabled debug logging to a dedicated file that does not rotate. This will collect the best logs however if left enabled for long periods of time you can run out of space.");
+    SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_EnableDriverDebugLogging,                        "log",                                          "Enable debug logging to the default MoCA log location. This is safe to leave enabled for long periods of time as this default log should be rotated");
+    SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_DisableDriverDebugLogging,                       "log_stop,logstop",                             "Disable MoCA debug logging");
     SET_LOCAL_API_HANDLER(RMHApp__LOCAL_HANDLE_ONLY,            RMHApp_Stop,                                            "stop",                                         "Shortcut to disable MoCA");
 }
