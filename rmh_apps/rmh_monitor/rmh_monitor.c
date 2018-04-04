@@ -31,6 +31,7 @@ RMH_Result RMHMonitor_PrintUsage(RMHMonitor *app) {
     RMH_PrintMsg("   --help            Print this help message\n");
     RMH_PrintMsg("   --no_timestamp    Do not prefix each line with a timestamp\n");
     RMH_PrintMsg("   --timestamp       Prefix each line with a timestamp\n");
+    RMH_PrintMsg("   --out-file        Write log messages to a file\n");
     RMH_PrintMsg("   --debug           Enable API trace messages\n");
     RMH_PrintMsg("\n");
     RMH_PrintMsg("\n");
@@ -82,6 +83,8 @@ RMH_Result RMHMonitor_ParseArguments(RMHMonitor *app, const int argc, const char
                 app->userSetTimestamps = true;
             } else if (strcmp(option, "-s") == 0 || strcmp(option, "--service_mode") == 0) {
                 app->serviceMode = true;
+            } else if (strcmp(option, "-o") == 0 || strcmp(option, "--out-file") == 0) {
+                app->out_file_name = argv[++i];;
             } else if (strcmp(option, "-?") == 0 || strcmp(option, "-h") == 0 || strcmp(option, "--help") == 0) {
                 return RMH_FAILURE;
             } else {
@@ -184,6 +187,13 @@ int main(const int argc, const char *argv[])
         app->printTimestamp = !app->serviceMode;
     }
 
+    if (app->out_file_name) {
+        app->out_file=fopen(app->out_file_name, "w");
+        if ( !app->out_file ) {
+            RMH_PrintErr("Failed to open file '%s' for writing. Falling back to stdout\n", app->out_file_name);
+        }
+    }
+
     /* Initialize the event queue. The event queue and thread allow us to get out of the callbacks ASAP */
     TAILQ_INIT(&app->eventQueue);
     app->eventNotify=RMHMonitor_Semaphore_Create();
@@ -229,6 +239,10 @@ int main(const int argc, const char *argv[])
     }
 
     RMH_PrintMsg("Exit status monitor\n");
+
+    if (app->out_file) {
+        fclose(app->out_file);
+    }
 
     /************ Exit ************/
     /* We made it to the end with no filures, indicate as such */

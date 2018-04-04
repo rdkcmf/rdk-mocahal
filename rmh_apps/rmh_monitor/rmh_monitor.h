@@ -96,6 +96,8 @@ typedef struct RMHMonitor {
     bool userSetTimestamps;                         /* Set to true to note the user explicitly set printTimestamp */
     bool printTimestamp;                            /* Set to true to prefix each output line with a timestamp */
     bool serviceMode;                               /* Set to true if the app is being started as a service. This will allow us to do things like systemd notify */
+    const char *out_file_name;                      /* The name of the file to write output to */
+    FILE* out_file;                                 /* The handle of the file to write output to */
 } RMHMonitor;
 
 

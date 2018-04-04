@@ -28,6 +28,10 @@
 #define PRINTBUF_SIZE 2048
 static char printBuff[PRINTBUF_SIZE];
 
+inline
+void RMH_Write(RMHMonitor *app, const char*buf) {
+    fputs(buf, app->out_file ? app->out_file : stdout);
+}
 
 /**
  * This is the main print function in this program. It will attempt to write 'fmt' string to stdout. It will also account for
@@ -68,8 +72,8 @@ void RMH_Print_Raw(RMHMonitor *app, struct timeval *time, const char*fmt, ...) {
         while(printString[i] != '\0') {
             if (newLine) {
                 /* This is a new line, start by printing the timestamp and prefix */
-                if (app->printTimestamp) fputs(timeBuf, stdout);
-                if (app->appPrefix) fputs(app->appPrefix, stdout);
+                if (app->printTimestamp) RMH_Write(app, timeBuf);
+                if (app->appPrefix) RMH_Write(app, app->appPrefix);
                 newLine=false;
             }
 
@@ -80,7 +84,7 @@ void RMH_Print_Raw(RMHMonitor *app, struct timeval *time, const char*fmt, ...) {
                    \0 so it should be safe */
                 char tmp=printString[i+1];
                 printString[i+1]='\0';
-                fputs(printString, stdout);
+                RMH_Write(app, printString);
                 printString[i+1]=tmp;
 
                 /* Move the start of the string forward to after the newline and set the newline flag */
@@ -96,17 +100,17 @@ void RMH_Print_Raw(RMHMonitor *app, struct timeval *time, const char*fmt, ...) {
 
         /* We've found the end of the string. If there some string remaining, print it */
         if (i > 0)
-            fputs(printString, stdout);
+            RMH_Write(app, printString);
 
         /* If we were limited by our buffer size inform the user. We still need to reset newline here since it's static */
         if (printSize >= PRINTBUF_SIZE) {
-            fputs("\nLog message truncated\n", stdout);
+            RMH_Write(app, "\nLog message truncated\n");
             newLine=true;
         }
     }
     else if (printSize < 0 ) {
         /* This should never happen. But if it does we still need to reset newline here since it's static  */
-        fputs("\nInternal print error\n", stdout);
+        RMH_Write(app, "\nInternal print error\n");
         newLine=true;
     }
 

@@ -28,7 +28,7 @@ RMHMonitor_hSemaphore RMHMonitor_Semaphore_Create() {
 
     eventHandle=malloc(sizeof(*eventHandle));
     if (!eventHandle) return NULL;
-    memset(eventHandle, 0, sizeof(eventHandle));
+    memset(eventHandle, 0, sizeof(*eventHandle));
 
     if (pthread_mutex_init(&eventHandle->lock, NULL) != 0) {
         free(eventHandle);
