@@ -300,17 +300,48 @@ RMH_Result RMHApp_ReadString(RMHApp *app, char *buf, const uint32_t bufSize) {
 static
 RMH_Result RMHApp_ReadACAType(RMHApp *app, RMH_ACAType *value) {
     char input[16];
-    if (ReadLine("Enter your choice (EVM,QUIET or 0,1): ", app, input, sizeof(input))) {
-        if ((strcmp(input, "0") == 0) || (strcasecmp(input, "RMH_ACA_EVM") == 0) || (strcasecmp(input, "EVM") == 0)) {
+    char choices[128];
+    snprintf(choices, sizeof(choices)/sizeof(choices[0]), "Enter your choice [EVM(%u),QUIET(%u)]: ", RMH_ACA_TYPE_EVM, RMH_ACA_TYPE_QUIET);
+    if (ReadLine(choices, app, input, sizeof(input))) {
+        int inputAsInt=(int)(input[0] - '0');
+        if ((inputAsInt == RMH_ACA_TYPE_EVM) || (strcasecmp(input, "RMH_ACA_TYPE_EVM") == 0) || (strcasecmp(input, "EVM") == 0)) {
             *value=RMH_ACA_TYPE_EVM;
             return RMH_SUCCESS;
         }
-        else if ((strcmp(input, "1") == 0) || (strcasecmp(input, "RMH_ACA_QUIET") == 0) || (strcasecmp(input, "QUIET") == 0)) {
+        else if ((inputAsInt == RMH_ACA_TYPE_QUIET) || (strcasecmp(input, "RMH_ACA_TYPE_QUIET") == 0) || (strcasecmp(input, "QUIET") == 0)) {
             *value=RMH_ACA_TYPE_QUIET;
             return RMH_SUCCESS;
         }
     }
-    RMH_PrintErr("Bad input. Please use only EVM,QUIET or 0,1\n");
+    RMH_PrintErr("Bad input\n");
+    return RMH_FAILURE;
+}
+
+static
+RMH_Result RMHApp_ReadPowerMode(RMHApp *app, RMH_PowerMode *value) {
+    char input[16];
+    char choices[128];
+    snprintf(choices, sizeof(choices)/sizeof(choices[0]), "Enter your choice [ACTIVE(%u),IDLE(%u),STANDBY(%u),SLEEP(%u)]: ", RMH_POWER_MODE_M0_ACTIVE, RMH_POWER_MODE_M1_IDLE, RMH_POWER_MODE_M2_STANDBY, RMH_POWER_MODE_M3_SLEEP);
+    if (ReadLine(choices, app, input, sizeof(input))) {
+        int inputAsInt=(int)(input[0] - '0');
+        if ((inputAsInt == RMH_POWER_MODE_M0_ACTIVE) || (strcasecmp(input, "RMH_POWER_MODE_M0_ACTIVE") == 0) || (strcasecmp(input, "ACTIVE") == 0)) {
+            *value=RMH_POWER_MODE_M0_ACTIVE;
+            return RMH_SUCCESS;
+        }
+        else if ((inputAsInt == RMH_POWER_MODE_M1_IDLE) || (strcasecmp(input, "RMH_POWER_MODE_M1_IDLE") == 0) || (strcasecmp(input, "IDLE") == 0)) {
+            *value=RMH_POWER_MODE_M1_IDLE;
+            return RMH_SUCCESS;
+        }
+        else if ((inputAsInt == RMH_POWER_MODE_M2_STANDBY) || (strcasecmp(input, "RMH_POWER_MODE_M2_STANDBY") == 0) || (strcasecmp(input, "STANDBY") == 0)) {
+            *value=RMH_POWER_MODE_M2_STANDBY;
+            return RMH_SUCCESS;
+        }
+        else if ((inputAsInt == RMH_POWER_MODE_M3_SLEEP) || (strcasecmp(input, "RMH_POWER_MODE_M3_SLEEP") == 0) || (strcasecmp(input, "SLEEP") == 0)) {
+            *value=RMH_POWER_MODE_M3_SLEEP;
+            return RMH_SUCCESS;
+        }
+    }
+    RMH_PrintErr("Bad input\n");
     return RMH_FAILURE;
 }
 
@@ -605,6 +636,23 @@ RMH_Result RMHApp__OUT_POWER_MODE(RMHApp *app, RMH_Result (*api)(const RMH_Handl
     if (ret == RMH_SUCCESS) {
         char outStr[128];
         RMH_PrintMsg("%s\n", RMH_PowerModeToString(response, outStr, sizeof(outStr)));
+    }
+    return ret;
+}
+
+static
+RMH_Result RMHApp__IN_POWER_MODE(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, const RMH_PowerMode response)) {
+    RMH_PowerMode mode;
+    RMH_Result ret=RMHApp_ReadPowerMode(app, &mode);
+    if (ret == RMH_SUCCESS) {
+        RMH_Result ret = api(app->rmh, mode);
+        if (ret == RMH_SUCCESS) {
+            char outStr[128];
+            RMH_PrintMsg("Success setting power mode to %s\n", RMH_PowerModeToString(mode, outStr, sizeof(outStr)));
+        }
+        else {
+            RMH_PrintMsg("Failed with error %s\n", RMH_ResultToString(ret));
+        }
     }
     return ret;
 }
@@ -1128,6 +1176,8 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__IN_MAC,                             RMH_Interface_SetMac,                                   "");
 
     SET_API_HANDLER(RMHApp__OUT_POWER_MODE,                     RMH_Power_GetMode,                                      "");
+    SET_API_HANDLER(RMHApp__OUT_POWER_MODE,                     RMH_Power_GetStandbyMode,                               "");
+    SET_API_HANDLER(RMHApp__IN_POWER_MODE,                      RMH_Power_SetStandbyMode,                               "");
     SET_API_HANDLER(RMHApp__OUT_POWER_MODE,                     RMH_Power_GetSupportedModes,                            "");
     SET_API_HANDLER(RMHApp__OUT_BOOL,                           RMH_Power_GetTxPowerControlEnabled,                     "");
     SET_API_HANDLER(RMHApp__IN_BOOL,                            RMH_Power_SetTxPowerControlEnabled,                     "");

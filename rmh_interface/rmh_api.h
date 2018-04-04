@@ -2361,6 +2361,60 @@ TRUE,
 RMH_API_IMPLEMENTATION_SOC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+RMH_Result RMH_Power_GetStandbyMode(const RMH_Handle handle, RMH_PowerMode* response),
+
+/* API Name */
+RMH_Power_GetStandbyMode,
+
+/* Description */
+"Return the power state MoCA will go to when the system goes to standby.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      RMH_PowerMode*,         "The power mode of this device will use in standby")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Get],Power"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Power_SetStandbyMode(const RMH_Handle handle, const RMH_PowerMode response),
+
+/* API Name */
+RMH_Power_SetStandbyMode,
+
+/* Description */
+"Set the power state of the MoCA device when the device goes to standby. This may trigger MoCA to restart.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(response,       const RMH_PowerMode,    "The desired power mode for the device")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Configuration [Set],Power"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 RMH_Result RMH_Power_GetTxPowerControlEnabled(const RMH_Handle handle, bool* response),
 
 /* API Name */

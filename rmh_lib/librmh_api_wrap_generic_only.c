@@ -196,6 +196,12 @@ RMH_Result GENERIC_IMPL__RMH_Self_SetEnabledRDK(const RMH_Handle handle) {
         BRMH_RETURN_IF_FAILED(RMH_Interface_SetMac(handle, mac));
     }
 #endif
+
+    /* BCOM-2548: Force MoCA to remain active when the box goes to standby. This will cost some power savings but is needed
+                  to work around an interop issue on the Cisco Xb3. When that device is the NC of a mixed mode network it 
+                  seems to have issues with a node going to standby */
+    RMH_Power_SetStandbyMode(handle, RMH_POWER_MODE_M0_ACTIVE);
+
     /***** Done setup device configuration ***********************/
 
     /* Enable MoCA */
