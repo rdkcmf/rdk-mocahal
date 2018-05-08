@@ -3263,6 +3263,33 @@ TRUE,
 
 
 
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_Network_GetBondedConnections(RMH_Handle handle, RMH_NodeMesh_Uint32_t* response),
+
+/* API Name */
+RMH_Network_GetBondedConnections,
+
+/* Description */
+"Return the bonded status for all nodes on the network. 'nodeValue' will 1 if the connection is bonded, 0 if not.",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    OUTPUT_PARAM(response,      RMH_NodeMesh_Uint32_t*, "A mesh table representing connections between all nodes.")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Network"
+/********************************************************************************************************************/
+)
+
+
+
 RMH_API_IMPLEMENTATION_GENERIC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */

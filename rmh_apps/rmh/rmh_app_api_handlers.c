@@ -1274,6 +1274,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetTxVLPER,                                 "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetTxNPER,                                  "");
     SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetBitLoadingInfo,                          "");
+    SET_API_HANDLER(RMHApp__OUT_UINT32_NODEMESH,                RMH_Network_GetBondedConnections,                       "");
     SET_API_HANDLER(RMHApp__GET_TABOO,                          RMH_Network_GetTabooChannels,                           "");
 
     SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetNodeIdFromAssociatedId,               "");
