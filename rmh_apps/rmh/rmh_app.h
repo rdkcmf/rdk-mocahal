@@ -71,7 +71,7 @@ typedef struct RMHApp {
 } RMHApp;
 
 RMH_Result RMHApp_ReadMenuOption(RMHApp *app, uint32_t *value, bool helpSupported, bool *helpRequested);
-inline const char * RMHApp_ReadNextArg(RMHApp *app);
+const char * RMHApp_ReadNextArg(RMHApp *app);
 void RMHApp_RegisterAPIHandlers(RMHApp *app);
 
 #endif

@@ -1316,6 +1316,7 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_STRING,                         RMH_Log_GetDriverFilename,                              "");
     SET_API_HANDLER(RMHApp__IN_STRING,                          RMH_Log_SetDriverFilename,                              "");
     SET_API_HANDLER(RMHApp__PRINT_STATUS,                       RMH_Log_PrintStatus,                                    "status");
+    SET_API_HANDLER(RMHApp__PRINT_STATUS,                       RMH_Log_PrintStats,                                     "stats");
     SET_API_HANDLER(RMHApp__PRINT_STATUS,                       RMH_Log_PrintFlows,                                     "flows");
     SET_API_HANDLER(RMHApp__PRINT_STATUS,                       RMH_Log_PrintModulation,                                "modulation");
 

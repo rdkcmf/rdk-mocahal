@@ -530,6 +530,22 @@ RMH_Result RMH_Print_MODULATION(const RMH_Handle handle, const uint32_t start, c
 }
 
 static
+RMH_Result RMHApp__OUT_UINT32_NODELIST(const RMH_Handle handle, RMH_Result (*api)(const RMH_Handle handle, RMH_NodeList_Uint32_t* response)) {
+    RMH_NodeList_Uint32_t response;
+
+    RMH_Result ret = api(handle, &response);
+    if (ret == RMH_SUCCESS) {
+        int i;
+        for (i = 0; i < RMH_MAX_MOCA_NODES; i++) {
+            if (response.nodePresent[i]) {
+                RMH_PrintMsg("  Node %02u: %u\n", i, response.nodeValue[i]);
+            }
+        }
+    }
+    return ret;
+}
+
+static
 RMH_Result RMH_Print_UINT32_NODEMESH(const RMH_Handle handle, RMH_Result (*api)(const RMH_Handle handle, RMH_NodeMesh_Uint32_t* response)) {
     RMH_NodeMesh_Uint32_t response;
     int i,j;
@@ -733,7 +749,8 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStats(const RMH_Handle handle, const char*
         PRINT_STATUS_UINT32(RMH_Stats_GetTxTotalAggregatedPackets);
         PRINT_STATUS_UINT32(RMH_Stats_GetTxTotalBytes);
 
-        RMH_PrintMsg("\n= Rx Stats ======\n");
+        RMH_PrintMsg("\n= Rx ======\n");
+        PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalBytes);
         PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalPackets);
         PRINT_STATUS_UINT32(RMH_Stats_GetRxUnicastPackets);
         PRINT_STATUS_UINT32(RMH_Stats_GetRxBroadcastPackets);
@@ -748,7 +765,21 @@ RMH_Result GENERIC_IMPL__RMH_Log_PrintStats(const RMH_Handle handle, const char*
         PRINT_STATUS_UINT32(RMH_Stats_GetRxCRCErrors);
         PRINT_STATUS_UINT32(RMH_Stats_GetRxTimeoutErrors);
         PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalAggregatedPackets);
-        PRINT_STATUS_UINT32(RMH_Stats_GetRxTotalBytes);
+        RMH_PrintMsg("RMH_Stats_GetRxCorrectedErrors:\n");
+        RMHApp__OUT_UINT32_NODELIST(handle, RMH_Stats_GetRxCorrectedErrors);
+        RMH_PrintMsg("RMH_Stats_GetRxUncorrectedErrors:\n");
+        RMHApp__OUT_UINT32_NODELIST(handle,RMH_Stats_GetRxUncorrectedErrors);
+
+        RMH_PrintMsg("\n= Admission ======\n");
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionAttempts);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionSucceeded);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionFailures);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsDeniedAsNC);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedNoResponse);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedChannelUnusable);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedT2Timeout);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedResyncLoss);
+        PRINT_STATUS_UINT32(RMH_Stats_GetAdmissionsFailedPrivacyFullBlacklist);
     }
     else {
             RMH_PrintMsg("*** Stats not available while MoCA link is down ***\n");
