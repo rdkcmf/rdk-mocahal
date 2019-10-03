@@ -192,7 +192,7 @@ uint32_t ReadLine(const char *prompt, RMHApp *app, char *buf, const uint32_t buf
         input=RMHApp_ReadNextArg(app);
         if (input) {
             strncpy(buf, input, bufSize);
-            buf[bufSize]='\0';
+            buf[bufSize-1]='\0';
         }
     }
 
@@ -200,7 +200,7 @@ uint32_t ReadLine(const char *prompt, RMHApp *app, char *buf, const uint32_t buf
 }
 
 RMH_Result RMHApp_ReadMenuOption(RMHApp *app, uint32_t *value, bool helpSupported, bool *helpRequested) {
-    char input[16];
+    char input[32];
     if (ReadLine("Enter your choice (number): ", app, input, sizeof(input))) {
         char *end;
         *value=(uint32_t)strtol(input, &end, 10);
@@ -221,7 +221,7 @@ RMH_Result RMHApp_ReadMenuOption(RMHApp *app, uint32_t *value, bool helpSupporte
 
 static
 RMH_Result RMHApp_ReadUint32(RMHApp *app, uint32_t *value) {
-    char input[16];
+    char input[32];
     if (ReadLine("Enter your choice (number): ", app, input, sizeof(input))) {
         char *end;
         *value=(uint32_t)strtol(input, &end, 10);
@@ -235,7 +235,7 @@ RMH_Result RMHApp_ReadUint32(RMHApp *app, uint32_t *value) {
 
 static
 RMH_Result RMHApp_ReadMAC(RMHApp *app, RMH_MacAddress_t* response) {
-    char input[18];
+    char input[32];
     char val[6];
     char dummy;
     int i;
@@ -274,7 +274,7 @@ RMH_Result RMHApp_ReadLogLevel(RMHApp *app, uint32_t *value) {
 
 static
 RMH_Result RMHApp_ReadInt32(RMHApp *app, int32_t *value) {
-    char input[16];
+    char input[32];
     if (ReadLine("Enter your choice (number): ", app, input, sizeof(input))) {
         char *end;
         *value=(uint32_t)strtol(input, &end, 10);
@@ -288,7 +288,7 @@ RMH_Result RMHApp_ReadInt32(RMHApp *app, int32_t *value) {
 
 static
 RMH_Result RMHApp_ReadUint32Hex(RMHApp *app, uint32_t *value) {
-    char input[16];
+    char input[32];
     if (ReadLine("Enter your choice (Hex): ", app, input, sizeof(input))) {
         char *end;
         *value=(uint32_t)strtol(input, &end, 0);
@@ -302,7 +302,7 @@ RMH_Result RMHApp_ReadUint32Hex(RMHApp *app, uint32_t *value) {
 
 static
 RMH_Result RMHApp_ReadBool(RMHApp *app, bool *value) {
-    char input[16];
+    char input[32];
     if (ReadLine("Enter your choice (TRUE,FALSE or 1,0): ", app, input, sizeof(input))) {
         if ((strcmp(input, "1") == 0) || (strcasecmp(input, "TRUE") == 0)) {
             *value=1;
@@ -328,9 +328,10 @@ RMH_Result RMHApp_ReadString(RMHApp *app, char *buf, const uint32_t bufSize) {
 
 static
 RMH_Result RMHApp_ReadACAType(RMHApp *app, RMH_ACAType *value) {
-    char input[16];
+    char input[32];
     char choices[128];
     snprintf(choices, sizeof(choices)/sizeof(choices[0]), "Enter your choice [EVM(%u),QUIET(%u)]: ", RMH_ACA_TYPE_EVM, RMH_ACA_TYPE_QUIET);
+
     if (ReadLine(choices, app, input, sizeof(input))) {
         int inputAsInt=(int)(input[0] - '0');
         if ((inputAsInt == RMH_ACA_TYPE_EVM) || (strcasecmp(input, "RMH_ACA_TYPE_EVM") == 0) || (strcasecmp(input, "EVM") == 0)) {
@@ -348,7 +349,7 @@ RMH_Result RMHApp_ReadACAType(RMHApp *app, RMH_ACAType *value) {
 
 static
 RMH_Result RMHApp_ReadPowerMode(RMHApp *app, RMH_PowerMode *value) {
-    char input[16];
+    char input[32];
     char choices[128];
     snprintf(choices, sizeof(choices)/sizeof(choices[0]), "Enter your choice [ACTIVE(%u),IDLE(%u),STANDBY(%u),SLEEP(%u)]: ", RMH_POWER_MODE_M0_ACTIVE, RMH_POWER_MODE_M1_IDLE, RMH_POWER_MODE_M2_STANDBY, RMH_POWER_MODE_M3_SLEEP);
     if (ReadLine(choices, app, input, sizeof(input))) {
@@ -376,7 +377,7 @@ RMH_Result RMHApp_ReadPowerMode(RMHApp *app, RMH_PowerMode *value) {
 
 static
 RMH_Result RMHApp_ReadPERMode(RMHApp *app, RMH_PERMode *value) {
-    char input[16];
+    char input[32];
     if (ReadLine("Enter your choice (LEGACY,NPER,VLPER or 0,1,2): ", app, input, sizeof(input))) {
         if ((strcmp(input, "0") == 0) || (strcasecmp(input, "RMH_PER_MODE_LEGACY") == 0) || (strcasecmp(input, "LEGACY") == 0)) {
             *value=RMH_PER_MODE_LEGACY;
