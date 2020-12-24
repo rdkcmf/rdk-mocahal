@@ -4126,6 +4126,230 @@ TRUE,
 RMH_API_IMPLEMENTATION_SOC_ONLY(
 /********************************************************************************************************************/
 /* API Declaration */
+RMH_Result RMH_RemoteNode_GetMaxConstellation_GCD100(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response),
+
+/* API Name */
+RMH_RemoteNode_GetMaxConstellation_GCD100,
+
+/* Description */
+"Return the GCD (broadcast) constellation limit for 100 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,         const uint32_t,         "The node Id of the remote node to inspect"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The GCD constellation for 100MHz for <nodeId>")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_SetMaxConstellation_GCD100(const RMH_Handle handle, const uint32_t nodeId, const uint32_t maxConstellation),
+
+/* API Name */
+RMH_RemoteNode_SetMaxConstellation_GCD100,
+
+/* Description */
+"Set the GCD (broadcast) constellation limit for 100 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(maxConstellation,   const uint32_t,         "The desired GCD constellation for 100MHz for <nodeId> between 0 and 10")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetMaxConstellation_GCD50(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response),
+
+/* API Name */
+RMH_RemoteNode_GetMaxConstellation_GCD50,
+
+/* Description */
+"Return the GCD (broadcast) constellation limit for 50 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,         const uint32_t,         "The node Id of the remote node to inspect"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The GCD constellation for 50MHz for <nodeId>")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_SetMaxConstellation_GCD50(const RMH_Handle handle, const uint32_t nodeId, const uint32_t maxConstellation),
+
+/* API Name */
+RMH_RemoteNode_SetMaxConstellation_GCD50,
+
+/* Description */
+"Set the GCD (broadcast) constellation limit for 50 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(maxConstellation,   const uint32_t,         "The desired GCD constellation for 50MHz for <nodeId> between 0 and 10")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetMaxConstellation_P2P100(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response),
+
+/* API Name */
+RMH_RemoteNode_GetMaxConstellation_P2P100,
+
+/* Description */
+"Return the point-to-point (unicast) constellation limit for 100 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,         const uint32_t,         "The node Id of the remote node to inspect"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The point-to-point constellation for 100MHz for <nodeId>")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_SetMaxConstellation_P2P100(const RMH_Handle handle, const uint32_t nodeId, const uint32_t maxConstellation),
+
+/* API Name */
+RMH_RemoteNode_SetMaxConstellation_P2P100,
+
+/* Description */
+"Set the point-to-point (unicast) constellation limit for 100 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(maxConstellation,   const uint32_t,         "The desired point-to-point constellation for 100MHz for <nodeId> between 0 and 10")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_GetMaxConstellation_P2P50(const RMH_Handle handle, const uint32_t nodeId, uint32_t* response),
+
+/* API Name */
+RMH_RemoteNode_GetMaxConstellation_P2P50,
+
+/* Description */
+"Return the point-to-point (unicast) constellation limit for 50 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,         const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,         const uint32_t,         "The node Id of the remote node to inspect"),
+    OUTPUT_PARAM(response,      uint32_t*,              "The point-to-point constellation for 50MHz for <nodeId>")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
+RMH_Result RMH_RemoteNode_SetMaxConstellation_P2P50(const RMH_Handle handle, const uint32_t nodeId, const uint32_t maxConstellation),
+
+/* API Name */
+RMH_RemoteNode_SetMaxConstellation_P2P50,
+
+/* Description */
+"Set the point-to-point (unicast) constellation limit for 50 MHz profiles",
+
+/* Parameters */
+PARAMETERS(
+    INPUT_PARAM(handle,             const RMH_Handle,       "The RMH handle as returned by RMH_Initialize"),
+    INPUT_PARAM(nodeId,             const uint32_t,         "The node Id of the remote node to inspect"),
+    INPUT_PARAM(maxConstellation,   const uint32_t,         "The desired point-to-point constellation for 50MHz for <nodeId> between 0 and 10")
+),
+
+/* Wrap API */
+TRUE,
+
+/* Tags */
+"Remote Node"
+/********************************************************************************************************************/
+)
+
+
+
+RMH_API_IMPLEMENTATION_SOC_ONLY(
+/********************************************************************************************************************/
+/* API Declaration */
 RMH_Result RMH_PQOS_GetMaxIngressFlows(const RMH_Handle handle, uint32_t* response),
 
 /* API Name */

@@ -476,6 +476,23 @@ RMH_Result RMHApp__IN_UINT32_OUT_UINT32(RMHApp *app, RMH_Result (*api)(const RMH
 }
 
 static
+RMH_Result RMHApp__IN_UINT32_IN_UINT32(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, const uint32_t nodeId, const uint32_t value)) {
+    uint32_t nodeId, value;
+    RMH_PrintMsg("Enter a node ID first, then the desired value\n", value, nodeId);
+    RMH_Result ret=RMHApp_ReadUint32(app, &nodeId);
+    if (ret == RMH_SUCCESS) {
+        RMH_Result ret=RMHApp_ReadUint32(app, &value);
+        if (ret == RMH_SUCCESS) {
+            ret = api(app->rmh, nodeId, value);
+            if (ret == RMH_SUCCESS) {
+                RMH_PrintMsg("Success passing %u for node id %u\n", value, nodeId);
+            }
+        }
+    }
+    return ret;
+}
+
+static
 RMH_Result RMHApp__IN_UINT32_OUT_INT32(RMHApp *app, RMH_Result (*api)(const RMH_Handle handle, const uint32_t nodeId, int32_t* response)) {
     int32_t response=0;
     uint32_t nodeId;
@@ -1335,6 +1352,14 @@ void RMHApp_RegisterAPIHandlers(RMHApp *app) {
     SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetSecondaryTxUnicastSubcarrierModulation, "");
     SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetRxBroadcastSubcarrierModulation,      "");
     SET_API_HANDLER(RMHApp__OUT_MODULATION,                     RMH_RemoteNode_GetTxBroadcastSubcarrierModulation,      "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetMaxConstellation_GCD100,              "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_IN_UINT32,                RMH_RemoteNode_SetMaxConstellation_GCD100,              "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetMaxConstellation_GCD50,               "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_IN_UINT32,                RMH_RemoteNode_SetMaxConstellation_GCD50,               "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetMaxConstellation_P2P100,              "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_IN_UINT32,                RMH_RemoteNode_SetMaxConstellation_P2P100,              "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_OUT_UINT32,               RMH_RemoteNode_GetMaxConstellation_P2P50,               "");
+    SET_API_HANDLER(RMHApp__IN_UINT32_IN_UINT32,                RMH_RemoteNode_SetMaxConstellation_P2P50,               "");
     SET_API_HANDLER(RMHApp__MoCA_RESET,                         RMH_RemoteNode_Reset,                                   "");
 
     SET_API_HANDLER(RMHApp__OUT_LOGLEVEL,                       RMH_Log_GetAPILevel,                                    "");
