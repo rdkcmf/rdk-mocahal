@@ -133,6 +133,7 @@ RMH_Result pRMH_RFC_GetBool(const RMH_Handle handle, const char*name, bool *valu
 RMH_Result GENERIC_IMPL__RMH_Self_RestoreRDKDefaultSettings(const RMH_Handle handle) {
     bool started;
     bool rfcBool;
+    int nodeId;
 
     BRMH_RETURN_IF_FAILED(RMH_Self_GetEnabled(handle, &started));
     if (started) {
@@ -224,9 +225,15 @@ RMH_Result GENERIC_IMPL__RMH_Self_RestoreRDKDefaultSettings(const RMH_Handle han
 #endif
 
     /* BCOM-2548: Force MoCA to remain active when the box goes to standby. This will cost some power savings but is needed
-                  to work around an interop issue on the Cisco Xb3. When that device is the NC of a mixed mode network it 
+                  to work around an interop issue on the Cisco Xb3. When that device is the NC of a mixed mode network it
                   seems to have issues with a node going to standby */
     RMH_Power_SetStandbyMode(handle, RMH_POWER_MODE_M0_ACTIVE);
+
+    /* BCOM-5271: In an effort to keep the MoCA like from going down under high interference conditions, we're limiting the
+                  GCD bits from 10 to 6. The goal here is not to fix the issue but just to help keep the link stable */
+    for(nodeId=0; nodeId != RMH_MAX_MOCA_NODES; nodeId++) {
+        RMH_RemoteNode_SetMaxConstellation_GCD100(handle, nodeId, 6);
+    }
 
     return RMH_SUCCESS;
 }
